@@ -13,6 +13,7 @@ use craft\events\DefineBehaviorsEvent;
 use craft\events\DefineElementInnerHtmlEvent;
 use craft\events\DefineRulesEvent;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterUrlRulesEvent;
 use craft\events\ReplaceAssetEvent;
 use craft\helpers\Cp;
 use craft\log\MonologTarget;
@@ -20,8 +21,11 @@ use craft\models\FieldLayout;
 use craft\services\Assets;
 use craft\services\Fields;
 
+use craft\web\UrlManager;
 use Monolog\Formatter\LineFormatter;
+
 use Psr\Log\LogLevel;
+
 use vaersaagod\muxmate\assetpreviews\MuxVideoPreview;
 use vaersaagod\muxmate\behaviors\MuxAssetBehavior;
 use vaersaagod\muxmate\fields\MuxMateField;
@@ -236,6 +240,15 @@ class MuxMate extends Plugin
                         $fieldLayout->addError('fields', Craft::t('_muxmate', 'MuxMate fields are only supported for assets.'));
                     }
                 }];
+            }
+        );
+
+        // Add a route to the webhooks controller
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            static function(RegisterUrlRulesEvent $event) {
+                $event->rules['muxmate/webhook'] = '_muxmate/webhook';
             }
         );
 

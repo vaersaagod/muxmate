@@ -16,6 +16,10 @@ class WebhookController extends Controller
 
     public $enableCsrfValidation = false;
 
+    /**
+     * @return bool
+     * @throws BadRequestHttpException
+     */
     public function actionIndex(): bool
     {
 
