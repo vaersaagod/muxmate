@@ -10,14 +10,12 @@ use craft\elements\Asset;
 use craft\elements\db\ElementQuery;
 use craft\elements\db\ElementQueryInterface;
 use craft\fieldlayoutelements\Tip;
-use craft\helpers\Cp;
 use craft\helpers\Db;
 use craft\helpers\ElementHelper;
 use craft\helpers\Html;
 use craft\helpers\StringHelper;
-
 use craft\web\View;
-use vaersaagod\muxmate\helpers\MuxApiHelper;
+
 use vaersaagod\muxmate\models\MuxMateFieldAttributes;
 
 use yii\base\InvalidConfigException;
@@ -38,14 +36,26 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         return 'mixed';
     }
 
+    /**
+     * @param mixed $value
+     * @param ElementInterface $element
+     * @return string
+     */
     public function getTableAttributeHtml(mixed $value, ElementInterface $element): string
     {
-        if ($value instanceof MuxMateFieldAttributes && $value->muxPlaybackId) {
-            $label = \Craft::t('_muxmate', 'Video is synced with Mux');
-            $content = '👍';
+        if (!$value instanceof MuxMateFieldAttributes || !$value->muxAssetId) {
+            $label = \Craft::t('_muxmate', 'Video does not have a Mux asset');
+            $content = '❌';
         } else {
-            $label = \Craft::t('_muxmate', 'Video is not synced with Mux');
-            $content = '⚠';
+            $muxData = $value->muxMetaData ?? [];
+            $muxStatus = $muxData['status'] ?? null;
+            if ($muxStatus !== 'ready') {
+                $label = \Craft::t('_muxmate', 'Mux video is being processed. Stay tuned!');
+                $content = '⏳';
+            } else {
+                $label = \Craft::t('_muxmate', 'Mux video is ready to play!');
+                $content = '👍';
+            }
         }
         return Html::tag('span', $content, [
             'role' => 'img',
@@ -54,7 +64,6 @@ class MuxMateField extends Field implements PreviewableFieldInterface
                 'label' => $label,
             ],
         ]);
-        return '️';
     }
 
     protected function defineRules(): array
@@ -134,7 +143,10 @@ class MuxMateField extends Field implements PreviewableFieldInterface
 
     protected function searchKeywords(mixed $value, ElementInterface $element): string
     {
-        return StringHelper::toString($value, ' ');
+        if ($value instanceof MuxMateFieldAttributes && $value->muxPlaybackId) {
+            return $value->muxPlaybackId;
+        }
+        return '';
     }
 
     /**
