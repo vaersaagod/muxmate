@@ -17,6 +17,7 @@
             "vaersaagod\\muxmate\\": "src/"
         }
     },
+    "license": "MIT",
     "extra": {
         "handle": "_muxmate",
         "name": "MuxMate",
