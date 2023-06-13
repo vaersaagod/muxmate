@@ -1,0 +1,26 @@
+{% set attributes = {
+    'playback-id': video.muxPlaybackId,
+    'metadata-video-title': video.title,
+    'metadata-video-id': video.uid
+} %}
+
+{% if inline ?? false %}
+    {% set attributes = attributes|merge({
+        autoplay: 'muted',
+        loop: true,
+        muted: true,
+        playsinline: true,
+        disablePictureInPicture: true
+    }) %}
+{% endif %}
+
+{% apply attr(attributes) %}
+    <mux-video></mux-video>
+{% endapply %}
+
+{% css %}
+    mux-video { display: block; }
+{% endcss %}
+
+{% set muxVideoUrl = craft.app.plugins.plugin('_muxmate').settings.muxVideoUrl %}
+{% js muxVideoUrl with { async: true } %}

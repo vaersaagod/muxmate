@@ -1,0 +1,275 @@
+{% import '_includes/forms.twig' as forms %}
+
+{% macro warning(text) %}
+    <p class="warning has-icon">
+        <span class="icon" aria-hidden="true"></span>
+        <span class="visually-hidden">{{ 'Warning'|t('_muxmate') }}: </span>
+        <span>{{ text }}</span>
+    </p>
+{% endmacro %}
+
+{% macro tip(text) %}
+    <p class="notice has-icon">
+        <span class="icon" aria-hidden="true"></span>
+        <span class="visually-hidden">{{ 'Warning'|t('_muxmate') }}: </span>
+        <span>{{ text }}</span>
+    </p>
+{% endmacro %}
+
+{% from _self import warning %}
+{% from _self import tip %}
+
+{% if asset ?? null %}
+
+    <div class="pane" data-mux-panel="{{ asset.id }}">
+
+        <div data-mux-fields>
+            {{ forms.copyTextField({
+                id: "mux-asset-id-#{asset.id}",
+                label: 'Mux Asset ID'|t('_muxmate'),
+                value: asset.muxAssetId,
+                class: ['code', not asset.muxAssetId ? 'disabled']|filter
+            }) }}
+
+            {{ forms.copyTextField({
+                id: "mux-playback-id-#{asset.id}",
+                label: 'Mux Playback ID'|t('_muxmate'),
+                value: asset.muxPlaybackId,
+                class: ['code', not asset.muxPlaybackId ? 'disabled']|filter
+            }) }}
+
+            {# HLS stream URL #}
+            {{ forms.copyTextField({
+                id: "mux-stream-url-#{asset.id}",
+                label: 'Mux Stream URL (HLS)'|t('_muxmate'),
+                value: asset.muxStatus == 'ready' ? asset.muxStreamUrl : '',
+                class: ['code', not asset.muxStreamUrl or asset.muxStatus != 'ready' ? 'disabled']|filter
+            }) }}
+
+        </div>
+
+        <hr />
+
+        <div data-mux-data>
+
+            {% if asset.muxAssetId %}
+
+                <h3>{{ 'Mux Asset Data'|t('_muxmate') }}</h3>
+
+                <div data-mux-data style="max-width:100%;overflow:auto;">
+                    {% if asset.muxData %}
+                        <pre>{{ asset.muxData|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+                    {% else %}
+                        {{ warning('No Mux data available'|t('_muxmate')) }}
+                    {% endif %}
+                </div>
+
+                <hr />
+
+            {% endif %}
+
+            <div>
+
+                <div class="flex">
+                    {% if asset.muxAssetId %}
+                        {{ forms.button({
+                            label: 'Update Mux data'|t('_muxmate'),
+                            spinner: true,
+                            attributes: {
+                                'data-update-mux-data-btn': true,
+                                'data-asset-id': asset.id
+                            }
+                        }) }}
+                        {{ forms.button({
+                            label: 'Delete Mux asset'|t('_muxmate'),
+                            spinner: true,
+                            attributes: {
+                                'data-delete-mux-asset-btn': true,
+                                'data-asset-id': asset.id
+                            },
+                            class: ['submit']
+                        }) }}
+                    {% endif %}
+                    {{ forms.button({
+                        label: asset.muxAssetId ? 'Create new Mux asset'|t('_muxmate') : 'Create Mux asset'|t('_muxmate'),
+                        spinner: true,
+                        attributes: {
+                            'data-create-mux-asset-btn': true,
+                            'data-asset-id': asset.id,
+                            'data-mux-asset-id': asset.muxAssetId
+                        },
+                        class: ['submit']
+                    }) }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% js %}
+
+        (() => {
+
+            async function refreshView(assetId) {
+                const url = window.location.href;
+                const response = await fetch(url);
+                const html = await response.text();
+                const $html = $(html).find(`[data-mux-panel="${assetId}"]`);
+                [`#fields-mux-asset-id-${assetId}`, `#fields-mux-playback-id-${assetId}`, `#fields-mux-stream-url-${assetId}`].forEach(fieldId => {
+                    const field = $(fieldId).get(0);
+                    const newField = $html.find(fieldId).get(0);
+                    if (!field || !newField) {
+                        return;
+                    }
+                    field.value = newField.value;
+                    if (field.value) {
+                        field.classList.remove('disabled');
+                    } else {
+                        field.classList.add('disabled');
+                    }
+                });
+            };
+
+            const onUpdateMuxDataBtnClick = e => {
+
+                const btn = e.currentTarget;
+                const { assetId } = btn.dataset;
+
+                if (btn.classList.contains('loading')) {
+                    return;
+                }
+
+                btn.classList.add('loading');
+
+                Craft.sendActionRequest(
+                        'POST',
+                        '_muxmate/default/update-data',
+                        {
+                            data: {
+                                assetId
+                            }
+                        }
+                    )
+                    .then(({data}) => {
+                        Craft.cp.displaySuccess(data.message);
+                        btn.classList.remove('loading');
+                        if (Craft.broadcaster) {
+                            Craft.broadcaster.postMessage({
+                                event: 'saveElement',
+                                id: assetId
+                            });
+                        }
+                    })
+                    .catch(({response}) => {
+                        Craft.cp.displayError(response.data.message);
+                        btn.disabled = false;
+                        btn.classList.remove('loading');
+                    })
+                    .then(() => {
+                        refreshView(assetId);
+                    });
+
+            };
+
+            $('button[data-update-mux-data-btn]').on('click', onUpdateMuxDataBtnClick);
+
+            const onDeleteMuxAssetBtnClick = e => {
+
+                const btn = e.currentTarget;
+                const { assetId } = btn.dataset;
+
+                if (btn.classList.contains('loading')) {
+                    return;
+                }
+
+                if (!window.confirm('This will permanently delete the Mux asset. Do you want to proceed?')) {
+                    return;
+                }
+
+                btn.classList.add('loading');
+
+                Craft.sendActionRequest(
+                        'POST',
+                        '_muxmate/default/delete',
+                        {
+                            data: {
+                                assetId
+                            }
+                        }
+                    )
+                    .then(({data}) => {
+                        Craft.cp.displaySuccess(data.message);
+                        btn.classList.remove('loading');
+                        if (Craft.broadcaster) {
+                            Craft.broadcaster.postMessage({
+                                event: 'saveElement',
+                                id: assetId
+                            });
+                        }
+                    })
+                    .catch(({response}) => {
+                        Craft.cp.displayError(response.data.message);
+                        btn.disabled = false;
+                        btn.classList.remove('loading');
+                    })
+                    .then(() => {
+                        refreshView(assetId);
+                    });
+
+            };
+
+            $('button[data-delete-mux-asset-btn]').on('click', onDeleteMuxAssetBtnClick);
+
+            const onCreateMuxAssetBtnClick = e => {
+
+                const btn = e.currentTarget;
+                const { assetId, muxAssetId } = btn.dataset;
+
+                if (muxAssetId && !window.confirm('This will delete the existing Mux asset and create a new one. Do you want to proceed?')) {
+                    return;
+                }
+
+                if (btn.classList.contains('loading')) {
+                    return;
+                }
+
+                btn.classList.add('loading');
+
+                Craft.sendActionRequest(
+                    'POST',
+                    '_muxmate/default/create',
+                    {
+                        data: {
+                            assetId
+                        }
+                    }
+                )
+                .then(({data}) => {
+                    Craft.cp.displaySuccess(data.message);
+                    btn.classList.remove('loading');
+                    if (Craft.broadcaster) {
+                        Craft.broadcaster.postMessage({
+                            event: 'saveElement',
+                            id: assetId
+                        });
+                    }
+                })
+                .catch(({response}) => {
+                    Craft.cp.displayError(response.data.message);
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                })
+                .then(() => {
+                    refreshView(assetId);
+                });
+
+            };
+
+            $('button[data-create-mux-asset-btn]').on('click', onCreateMuxAssetBtnClick);
+
+        })();
+    {% endjs %}
+
+{% endif %}
