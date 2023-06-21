@@ -198,28 +198,34 @@ class MuxAssetBehavior extends Behavior
     }
 
     /**
-     * @return int|null
+     * @return float|int|null
      */
-    public function getMuxAspectRatio(): ?int
+    public function getMuxAspectRatio(): float|int|null
     {
         if (!$this->owner instanceof Asset) {
             return null;
         }
+
         $data = MuxMateHelper::getMuxData($this->owner);
         if (empty($data)) {
             return null;
         }
+
         $aspectRatio = $data['aspect_ratio'] ?? null;
         if (empty($aspectRatio) || !is_string($aspectRatio)) {
             return null;
         }
 
-        $temp = explode(':', $aspectRatio);
-        if (count($temp) !== 2) {
+        $temp = array_map('intval', explode(':', $aspectRatio));
+        $width = $temp[0] ?? null;
+        $height = $temp[1] ?? null;
+
+        if (!$width || !$height) {
             return null;
         }
 
-        return $temp[0] / $temp[1];
+        return $width / $height;
+
     }
 
 }

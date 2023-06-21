@@ -1,5 +1,9 @@
 # MuxMate Changelog
 
+## 1.0.3 - 2023-06-21
+### Fixed
+- Fixed an issue where the `getMuxAspectRatio()` always returned `1`
+
 ## 1.0.2 - 2023-06-13
 ### Improved
 - More emoji statuses in MuxMate field table attributes 🎉
