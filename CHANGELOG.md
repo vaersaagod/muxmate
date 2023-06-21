@@ -1,7 +1,11 @@
 # MuxMate Changelog
 
+## 1.1.2 - 2023-06-21
+### Fixed 
+- Fixed an issue where not all params passed to `getMuxImageUrl()` would make it 
+
 ## 1.1.1 - 2023-06-21
-### Added  
+### Fixed  
 - Fixed a PHP exception due to a typing error
 
 ## 1.1.0 - 2023-06-21

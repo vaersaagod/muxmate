@@ -107,24 +107,6 @@ class MuxApiHelper
     public static function getImageUrl(string $muxPlaybackId, array $params = []): string
     {
 
-        $params = \array_reduce(\array_keys($params), function (array $carry, string $key) use ($params,) {
-            $valuesMap = [
-                'fit' => 'preserve',
-            ];
-            $paramsMap = [
-                'w' => 'width',
-                'h' => 'height',
-                'fit' => 'fit_mode',
-                'mode' => 'fit_mode',
-            ];
-            $value = $valuesMap[$params[$key]] ?? $params[$key];
-            if (!$value) {
-                return $carry;
-            }
-            $carry[$paramsMap[$key] ?? $key] = $value;
-            return $carry;
-        }, []);
-
         if (!isset($params['fit_mode'])) {
             if (($params['width'] ?? null) && ($params['height'])) {
                 $params['fit_mode'] = 'smartcrop';
@@ -138,29 +120,13 @@ class MuxApiHelper
     }
 
     /**
-     * @param string|null $muxPlaybackId
+     * @param string $muxPlaybackId
      * @param array $params
      * @return string|null
      */
-    public static function getGifUrl(?string $muxPlaybackId, array $params = []): ?string
+    public static function getGifUrl(string $muxPlaybackId, array $params = []): ?string
     {
-
-        if (!$muxPlaybackId) {
-            return null;
-        }
-
-        $paramsMap = [
-            'w' => 'width',
-            'h' => 'height',
-        ];
-
-        $params = \array_reduce(\array_keys($params), function (array $carry, string $key) use ($params, $paramsMap) {
-            $carry[$paramsMap[$key] ?? $key] = $params[$key];
-            return $carry;
-        }, []);
-
         return UrlHelper::url(static::MUX_IMAGE_DOMAIN . '/' . $muxPlaybackId . "/animated.gif", $params);
-
     }
 
     /**
