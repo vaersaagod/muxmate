@@ -1,5 +1,9 @@
 # MuxMate Changelog
 
+## 1.1.1 - 2023-06-21
+### Added  
+- Fixed a PHP exception due to a typing error
+
 ## 1.1.0 - 2023-06-21
 ### Added  
 - Added the `isMuxVideo()` and `isMuxVideoReady()` asset methods.  

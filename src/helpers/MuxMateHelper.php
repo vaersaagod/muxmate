@@ -192,7 +192,7 @@ class MuxMateHelper
     {
         $muxMateFieldHandle = static::_getMuxMateFieldForAsset($asset)?->handle;
         if (!$muxMateFieldHandle) {
-            return false;
+            return null;
         }
 
         /** @var MuxMateFieldAttributes|null $muxMateFieldAttributes */
