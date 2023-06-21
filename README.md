@@ -280,6 +280,12 @@ Per-volume config settings. Currently only supports a `baseUrl` setting, see "Ov
 ## Mux asset methods and attributes
 MuxMate adds some methods and attributes to asset models:
 
+### `isMuxVideo()` [bool]  
+Returns `true` if the asset has a Mux playback ID.  
+
+### `isMuxVideoReady()` [bool]  
+Returns `true` if the asset has a Mux playback ID and a "ready" status, i.e. is ready to play.  
+
 ### `getMuxVideo()` [Markup|null]
 If the asset has a Mux playback ID, returns a `<mux-video>` web component.  
 
@@ -305,7 +311,7 @@ If the asset has a Mux playback ID, returns an animated GIF from the video.
 ### `getMuxAssetId()` [string|null]  
 Returns the Mux asset ID.
 
-### `getMuxAssetId()` [string|null]  
+### `getMuxPlaybackId()` [string|null]  
 Returns the Mux playback ID.
 
 ### `getMuxData()` [array|null]  

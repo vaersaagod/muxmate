@@ -16,6 +16,23 @@ use yii\base\Behavior;
 class MuxAssetBehavior extends Behavior
 {
 
+
+    /**
+     * @return bool
+     */
+    public function isMuxVideo(): bool
+    {
+        return !empty($this->getMuxPlaybackId());
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMuxVideoReady(): bool
+    {
+        return $this->getMuxStatus() === 'ready';
+    }
+
     /**
      * @return string|null
      */

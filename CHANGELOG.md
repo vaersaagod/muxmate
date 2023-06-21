@@ -1,5 +1,9 @@
 # MuxMate Changelog
 
+## 1.1.0 - 2023-06-21
+### Added  
+- Added the `isMuxVideo()` and `isMuxVideoReady()` asset methods.  
+
 ## 1.0.3 - 2023-06-21
 ### Fixed
 - Fixed an issue where the `getMuxAspectRatio()` always returned `1`
