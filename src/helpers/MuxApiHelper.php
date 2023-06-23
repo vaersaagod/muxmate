@@ -108,7 +108,7 @@ class MuxApiHelper
     {
 
         if (!isset($params['fit_mode'])) {
-            if (($params['width'] ?? null) && ($params['height'])) {
+            if (isset($params['width']) && isset($params['height'])) {
                 $params['fit_mode'] = 'smartcrop';
             } else {
                 $params['fit_mode'] = 'preserve';
