@@ -74,7 +74,7 @@ In local environments, Mux typically won't be able to access your videos. To mak
 
 ### Use a cloud storage (S3, DO Spaces) file system for your video assets  
 
-A simple solution is to use some sort of cloud storage file system for your videos' volume. You can even set up a cloud storage file system that is only used locally, by using an envirnoment variable for your volume's "Asset Filesystem" setting.  
+A simple solution is to use some sort of cloud storage file system for your videos' volume. You can even set up a cloud storage file system that is only used locally, by using an environment variable for your volume's "Asset Filesystem" setting.  
 
 ### Override your volume's file system Base URL in local environments with a remote tunnel
 
@@ -266,6 +266,14 @@ const observer = new IntersectionObserver(([{ isIntersecting }]) => {
 });
 ```
 
+##### Content-Security Policy (CSP)  
+
+If you're implementing a CSP, you might need to set a nonce to the script tags created by MuxMate. To do that, use the `scriptSrcNonce` config setting. Here's an example using the ToolMate plugin to create the nonce:  
+
+```php
+
+
+
 ## Get images and animated GIFs from videos  
 
 ### Get image from video
@@ -298,21 +306,26 @@ MuxMate is configured by adding a file `config/_muxmate.php` to your repository.
 
 #### `muxAccessTokenId` [string|null]  
 Default: `null`  
+
 The Mux access token ID  
 
 #### `muxSecretKey` [string|null]  
 Default: `null`  
+
 The Mux access token secret key  
 
 #### `muxVideoUrl` [string|bool|null]
 Default: `'https://cdn.jsdelivr.net/npm/@mux/mux-video@0'`  
+
 The URL to the `<mux-video>` JS library. Set it to a different URL (aliases and environment variables are supported) if you want to use a different distribution, or set it to `false` to handle loading the library completely yourself (i.e. for custom lazy loading purposes or the like).  
 
 #### `lazyloadMuxVideo` [bool]  
 Default: `false`  
+
 Set to `true` to make MuxMate lazy load the `<mux-video>` library. I.e. instead of automatically being loaded at pageload (albeit async), MuxMate will create an IntersectionObserver and load the script as soon as a `<mux-video>` component enters the viewport.  
 
 #### `scriptSrcNonce` [string|null]  
+
 If you're implementing a Content-Security Policy (good idea!), you might need to set a nonce for the script tag(s) that MuxMate injects to the page. Here's an example using the ToolMate plugin:  
 
 ```php
@@ -339,6 +352,8 @@ Returns `true` if the asset has a Mux playback ID.
 Returns `true` if the asset has a Mux playback ID and a "ready" status, i.e. is ready to play.  
 
 ### `getMuxVideo()` [Markup|null]
+`@config` bool [default `false`] Automatically sets all the required attributes for videos that should play inline  
+`@lazyload` bool [default `false`] 
 If the asset has a Mux playback ID, returns a `<mux-video>` web component.  
 
 ### `getMuxStreamUrl()` [string|null]
