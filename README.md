@@ -204,7 +204,7 @@ Example using `object-fit: cover;`:
 
 #### Control Mux video playback with JS
 
-Generally, `<mux-video>` works the same as native `<video>` elements – i.e. it has same methods (`.play()`, .pause()`, etc), and emits the same events (`timeupdate` etc).   
+Generally, `<mux-video>` works the same as native `<video>` elements – i.e. it has same methods (`.play()`, `.pause()`, etc), and emits the same events (`timeupdate` etc).   
 
 However, before attempting to interact with a Mux video programmatically, you should make sure that the custom `<mux-video>` web component has loaded, using [the `customElements` API](https://developer.mozilla.org/en-US/docs/Web/API/Window/customElements):   
 
@@ -228,7 +228,7 @@ The `<mux-video>` web component is a little bit beefy (~150K gzipped), so it can
 
 ##### Lazy-loading `<mux-video>` everywhere all the time
 
-To automatically lazy-load the `<mux-video>` web component everywhere, simply set the `lazyloadMuxVideo` config setting to `true`. Done.
+To automatically lazy-load the `<mux-video>` web component everywhere, simply set the `lazyloadMuxVideo` config setting to `true`. This will make MuxMate create an `IntersectionObserver` instance, that loads the `<mux-video>` library as soon as a Mux video component enters the viewport (instead of loading it on pageload).  
 
 ##### Lazy-loading per `<mux-video>` instance  
 
@@ -250,7 +250,7 @@ return [
 ];
 ```
 
-Then, you're free to load the web component yourself, however you like, in whatever lazy fashion you fancy. For example:   
+At that point, you're free to load the web component yourself, in whatever lazy fashion you fancy. For example:   
 
 ```js
 const video = document.getElementById('video');
@@ -268,11 +268,19 @@ const observer = new IntersectionObserver(([{ isIntersecting }]) => {
 
 ##### Content-Security Policy (CSP)  
 
-If you're implementing a CSP, you might need to set a nonce to the script tags created by MuxMate. To do that, use the `scriptSrcNonce` config setting. Here's an example using the ToolMate plugin to create the nonce:  
+If you're implementing a CSP (good idea!), you might need to set a nonce to the script tags created by MuxMate. To do that, use the `scriptSrcNonce` config setting. Here's an example using the ToolMate plugin to create the nonce:  
 
 ```php
+<?php
 
+use \vaersaagod\toolmate\ToolMate;
 
+return [
+    'scriptSrcNonce' => ToolMate::getInstance()->csp->createNonce('script-src'),
+];
+```  
+
+This feature works even with template caching enabled 🔥
 
 ## Get images and animated GIFs from videos  
 
@@ -325,18 +333,7 @@ Default: `false`
 Set to `true` to make MuxMate lazy load the `<mux-video>` library. I.e. instead of automatically being loaded at pageload (albeit async), MuxMate will create an IntersectionObserver and load the script as soon as a `<mux-video>` component enters the viewport.  
 
 #### `scriptSrcNonce` [string|null]  
-
-If you're implementing a Content-Security Policy (good idea!), you might need to set a nonce for the script tag(s) that MuxMate injects to the page. Here's an example using the ToolMate plugin:  
-
-```php
-<?php
-
-use \vaersaagod\toolmate\ToolMate;
-
-return [
-    'scriptSrcNonce' => ToolMate::getInstance()->csp->createNonce('script-src'),
-];
-```
+Default `null`  
 
 #### `volumes` [array|null]
 Default: `null`
@@ -352,9 +349,19 @@ Returns `true` if the asset has a Mux playback ID.
 Returns `true` if the asset has a Mux playback ID and a "ready" status, i.e. is ready to play.  
 
 ### `getMuxVideo()` [Markup|null]
-`@config` bool [default `false`] Automatically sets all the required attributes for videos that should play inline  
-`@lazyload` bool [default `false`] 
+`@params` array [default `[]`]  
+
 If the asset has a Mux playback ID, returns a `<mux-video>` web component.  
+
+The `params` array can contain the following settings:  
+
+```twig
+inline: true # Automatically sets all the required attributes for videos that should play inline.
+```
+
+```twig
+lazyload: true # Creates an IntersectionObserver that loads the mux-video JS library as soon as this component enters the viewport
+```
 
 ### `getMuxStreamUrl()` [string|null]
 If the asset has a Mux playback ID, returns the HLS stream URL.
