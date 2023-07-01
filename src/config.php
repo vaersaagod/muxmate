@@ -3,7 +3,8 @@
 return [
     'muxAccessTokenId' => null,
     'muxSecretKey' => null,
-    'muxPlayerUrl' => null,
     'muxVideoUrl' => null,
+    'lazyloadMuxVideo' => false,
+    'scriptSrcNonce' => null,
     'volumes' => null,
 ];
