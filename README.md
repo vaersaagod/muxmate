@@ -224,19 +224,17 @@ window.customElements.whenDefined('mux-video')
 
 #### Lazy-loading the `<mux-video>` web component
 
-The `<mux-video>` web component is a little bit beefy (~150K gzipped), so it can make sense to lazy-load it. There are a few ways to do that:  
+The `<mux-video>` web component is a little bit beefy (~150K gzipped), so it can make sense to lazy-load it – i.e. not load it before a `<mux-video>` element actually enters the viewport.  
 
-##### Lazy-loading `<mux-video>` everywhere all the time
+To automatically lazy-load the `<mux-video>` web component everywhere, simply set the `lazyloadMuxVideo` config setting to `true`:  
 
-To automatically lazy-load the `<mux-video>` web component everywhere, simply set the `lazyloadMuxVideo` config setting to `true`. This will make MuxMate create an `IntersectionObserver` instance, that loads the `<mux-video>` library as soon as a Mux video component enters the viewport (instead of loading it on pageload).  
+```php
+<?php
 
-##### Lazy-loading per `<mux-video>` instance  
-
-Alternatively, you can tell MuxMate to lazy load the `<mux-video>` web component by passing `lazyload: true` to the `getMuxVideo()` method:  
-
-```twig
-{{ asset.getMuxVideo({ lazyload: true }) }}
-```
+return [
+    'lazyloadMuxVideo' => true,
+];
+```  
 
 ##### Implementing your own lazy loading strategy
 
@@ -250,7 +248,7 @@ return [
 ];
 ```
 
-At that point, you're free to load the web component yourself, in whatever lazy fashion you fancy. For example:   
+At that point, you're free to load the web component yourself in whatever lazy fashion you fancy. For example:   
 
 ```js
 const video = document.getElementById('video');
@@ -357,10 +355,6 @@ The `params` array can contain the following settings:
 
 ```twig
 inline: true # Automatically sets all the required attributes for videos that should play inline.
-```
-
-```twig
-lazyload: true # Creates an IntersectionObserver that loads the mux-video JS library as soon as this component enters the viewport
 ```
 
 ### `getMuxStreamUrl()` [string|null]
