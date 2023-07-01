@@ -22,5 +22,35 @@
     mux-video { display: block; }
 {% endcss %}
 
-{% set muxVideoUrl = craft.app.plugins.plugin('_muxmate').settings.muxVideoUrl %}
-{% js muxVideoUrl with { async: true } %}
+{% set muxVideoUrl = muxVideoUrl ?? null %}
+
+{% if muxVideoUrl %}
+    {% set lazyload = lazyload ?? false %}
+    {% if nonce ?? null %}
+        {% set nonce = '%%%MUXMATE_NONCE_PLACEHOLDER%%%' %}
+    {% endif %}
+    {% if lazyload %}
+        {% script with { nonce } %}
+            document.addEventListener('DOMContentLoaded', () => {
+                let muxVideoLoaded = false;
+                let observer = new IntersectionObserver(entries => {
+                    entries.forEach(({isIntersecting}) => {
+                        if (!isIntersecting || muxVideoLoaded) {
+                            return;
+                        }
+                        muxVideoLoaded = true;
+                        const script = document.createElement('script');
+                        script.src = '{{ muxVideoUrl }}';
+                        script.async = true;
+                        document.body.appendChild(script);
+                        observer.disconnect();
+                        observer = null;
+                    });
+                });
+                document.body.querySelectorAll('mux-video').forEach(muxVideo => observer.observe(muxVideo));
+            });
+        {% endscript %}
+    {% else %}
+        {% js muxVideoUrl with { async: true, nonce } %}
+    {% endif %}
+{% endif %}

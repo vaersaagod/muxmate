@@ -1,5 +1,17 @@
 # MuxMate Changelog
 
+## 1.2.0 - 2023-07-01
+### Added
+- Added the ability to have MuxMate automatically lazyload the `<mux-video>` web component
+- Added the ability to have MuxMate *not* load the `<mux-video>` web component JS library at all
+- Added the `lazyloadMuxVideo` config setting  
+- Added the `scriptSrcNonce` config setting  
+### Changed
+- The `muxVideoUrl` config setting now supports a `false` value, in which case MuxMate will not load the `<mux-video>` library
+- The `Asset::getMuxVideo()` method no longer returns `null`, avoiding a PHP exception that would occur if using the `|attr()` filter directly on its output.
+### Improved  
+- Improved video previews when assets are missing their Mux playback ID  
+
 ## 1.1.3 - 2023-06-23
 ### Fixed
 - Fixed dumb bug

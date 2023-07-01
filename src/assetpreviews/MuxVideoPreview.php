@@ -6,6 +6,7 @@ use craft\assetpreviews\Video;
 use craft\web\View;
 
 use vaersaagod\muxmate\helpers\MuxMateHelper;
+use vaersaagod\muxmate\MuxMate;
 
 class MuxVideoPreview extends Video
 {
@@ -21,11 +22,9 @@ class MuxVideoPreview extends Video
      */
     public function getPreviewHtml(array $variables = []): string
     {
-        if (!MuxMateHelper::getMuxPlaybackId($this->asset)) {
-            return parent::getPreviewHtml();
-        }
         return \Craft::$app->getView()->renderTemplate('_muxmate/_mux-video-preview.twig', [
-            'asset' => $this->asset,
+            'playbackId' => MuxMateHelper::getMuxPlaybackId($this->asset),
+            'playerUrl' => MuxMate::MUX_PLAYER_URL,
         ], View::TEMPLATE_MODE_CP);
     }
 

@@ -11,6 +11,7 @@ use Twig\Markup;
 use vaersaagod\muxmate\helpers\MuxApiHelper;
 use vaersaagod\muxmate\helpers\MuxMateHelper;
 
+use vaersaagod\muxmate\MuxMate;
 use yii\base\Behavior;
 
 class MuxAssetBehavior extends Behavior
@@ -49,25 +50,32 @@ class MuxAssetBehavior extends Behavior
 
     /**
      * @param array $params
-     * @return Markup|null
+     * @return string|Markup
      */
-    public function getMuxVideo(array $params = []): ?Markup
+    public function getMuxVideo(array $params = []): string|Markup
     {
         if (
             !$this->owner instanceof Asset ||
             !MuxMateHelper::getMuxPlaybackId($this->owner)
         ) {
-            return null;
+            return '';
         }
-        $inline = (bool)($params['inline'] ?? false);
         try {
+            $settings = MuxMate::getInstance()->getSettings();
+            $muxVideoUrl = $settings->muxVideoUrl;
+            $inline = $params['inline'] ?? null;
+            $lazyload = $params['lazyload'] ?? $settings->lazyloadMuxVideo;
+            $nonce = $settings->scriptSrcNonce;
             $html = Template::raw(\Craft::$app->getView()->renderTemplate('_muxmate/_mux-video.twig', [
                 'video' => $this->owner,
+                'muxVideoUrl' => $muxVideoUrl,
                 'inline' => $inline,
+                'lazyload' => $lazyload,
+                'nonce' => $nonce,
             ], View::TEMPLATE_MODE_CP));
         } catch (\Throwable $e) {
             \Craft::error($e, __METHOD__);
-            return null;
+            return '';
         }
         return $html;
     }

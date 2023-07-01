@@ -16,12 +16,14 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\ReplaceAssetEvent;
 use craft\helpers\Cp;
+use craft\helpers\StringHelper;
 use craft\log\MonologTarget;
 use craft\models\FieldLayout;
 use craft\services\Assets;
 use craft\services\Fields;
-
+use craft\web\Response;
 use craft\web\UrlManager;
+
 use Monolog\Formatter\LineFormatter;
 
 use Psr\Log\LogLevel;
@@ -35,6 +37,7 @@ use vaersaagod\muxmate\models\Settings;
 
 use yii\base\Event;
 use yii\base\ModelEvent;
+use yii\web\Response as BaseResponse;
 
 /**
  * MuxMate plugin
@@ -44,6 +47,13 @@ use yii\base\ModelEvent;
  */
 class MuxMate extends Plugin
 {
+
+    /** @var string The default URL to the `<mux-player>` web component */
+    public const MUX_PLAYER_URL = 'https://cdn.jsdelivr.net/npm/@mux/mux-player';
+
+    /** @var string The default URL to the `<mux-video>` web component */
+    public const MUX_VIDEO_URL = 'https://cdn.jsdelivr.net/npm/@mux/mux-video@0';
+
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = false;
 
@@ -87,7 +97,7 @@ class MuxMate extends Plugin
     {
 
         // Register custom MuxMate field type
-        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function (RegisterComponentTypesEvent $event) {
+        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function(RegisterComponentTypesEvent $event) {
             $event->types[] = MuxMateField::class;
         });
 
@@ -95,7 +105,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Model::EVENT_DEFINE_BEHAVIORS,
-            static function (DefineBehaviorsEvent $event) {
+            static function(DefineBehaviorsEvent $event) {
                 $event->behaviors['muxAssetBehavior'] = [
                     'class' => MuxAssetBehavior::class,
                 ];
@@ -106,7 +116,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Element::EVENT_AFTER_PROPAGATE,
-            static function (ModelEvent $event) {
+            static function(ModelEvent $event) {
                 /** @var Asset $asset */
                 $asset = $event->sender;
                 if (
@@ -124,7 +134,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_BEFORE_REPLACE_ASSET,
-            static function (ReplaceAssetEvent $event) {
+            static function(ReplaceAssetEvent $event) {
                 $asset = $event->asset;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
                     return;
@@ -137,7 +147,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Element::EVENT_AFTER_DELETE,
-            static function (Event $event) {
+            static function(Event $event) {
                 /** Asset $asset */
                 $asset = $event->sender;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
@@ -151,7 +161,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_DEFINE_THUMB_URL,
-            function (DefineAssetThumbUrlEvent $event) {
+            function(DefineAssetThumbUrlEvent $event) {
                 $asset = $event->asset;
                 if (
                     $asset->kind !== Asset::KIND_VIDEO ||
@@ -171,7 +181,7 @@ class MuxMate extends Plugin
         Event::on(
             Cp::class,
             Cp::EVENT_DEFINE_ELEMENT_INNER_HTML,
-            static function (DefineElementInnerHtmlEvent $event) {
+            static function(DefineElementInnerHtmlEvent $event) {
                 $element = $event->element;
                 if (
                     !$element instanceof Asset ||
@@ -207,7 +217,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_REGISTER_PREVIEW_HANDLER,
-            static function (AssetPreviewEvent $event) {
+            static function(AssetPreviewEvent $event) {
                 $asset = $event->asset;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
                     return;
@@ -221,25 +231,27 @@ class MuxMate extends Plugin
         Event::on(
             FieldLayout::class,
             Model::EVENT_DEFINE_RULES,
-            static function (DefineRulesEvent $event) {
+            static function(DefineRulesEvent $event) {
                 /** @var FieldLayout $fieldLayout */
                 $fieldLayout = $event->sender;
-                $event->rules[] = ['customFields', static function() use ($fieldLayout) {
-                    $customFields = $fieldLayout->getCustomFields();
-                    $hasMuxMateField = false;
-                    foreach ($customFields as $customField) {
-                        if ($customField instanceof MuxMateField) {
-                            if ($hasMuxMateField) {
-                                $fieldLayout->addError('fields', Craft::t('_muxmate', 'Only one MuxMate field can be added to a single field layout.'));
-                                break;
+                $event->rules[] = [
+                    'customFields', static function() use ($fieldLayout) {
+                        $customFields = $fieldLayout->getCustomFields();
+                        $hasMuxMateField = false;
+                        foreach ($customFields as $customField) {
+                            if ($customField instanceof MuxMateField) {
+                                if ($hasMuxMateField) {
+                                    $fieldLayout->addError('fields', Craft::t('_muxmate', 'Only one MuxMate field can be added to a single field layout.'));
+                                    break;
+                                }
+                                $hasMuxMateField = true;
                             }
-                            $hasMuxMateField = true;
+                        }
+                        if ($hasMuxMateField && $fieldLayout->type !== Asset::class) {
+                            $fieldLayout->addError('fields', Craft::t('_muxmate', 'MuxMate fields are only supported for assets.'));
                         }
                     }
-                    if ($hasMuxMateField && $fieldLayout->type !== Asset::class) {
-                        $fieldLayout->addError('fields', Craft::t('_muxmate', 'MuxMate fields are only supported for assets.'));
-                    }
-                }];
+                ];
             }
         );
 
@@ -252,5 +264,24 @@ class MuxMate extends Plugin
             }
         );
 
+        // Replace nonce placeholders
+        if (
+            \Craft::$app->getRequest()->getIsSiteRequest() &&
+            $scriptSrcNonce = $this->getSettings()->scriptSrcNonce
+        ) {
+            Event::on(
+                Response::class,
+                BaseResponse::EVENT_AFTER_PREPARE,
+                static function(Event $event) use ($scriptSrcNonce) {
+                    /** @var Response $response */
+                    $response = $event->sender;
+                    $content = $response?->content;
+                    if (empty($content)) {
+                        return;
+                    }
+                    $response->content = StringHelper::replace($content, 'nonce="%%%MUXMATE_NONCE_PLACEHOLDER%%%"', 'nonce="' . $scriptSrcNonce . '"');
+                }
+            );
+        }
     }
 }

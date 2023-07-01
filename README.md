@@ -182,9 +182,9 @@ Alternatively, you can of course set these attributes yourself using the `|attr(
 
 #### Object-fitted Mux videos
 
-Styling `<mux-video>` is generally straight-forward, one exception being object-fitting, since `object-fit` needs to be applied to the actual `<video>` element, which we can't access because it's nested in the web component's shadow DOM.   
+Styling `<mux-video>` is generally straight-forward. One exception is object-fitting, since `object-fit` needs to be applied to the actual `<video>` element – which can't be accessed as it's nested in the web component's shadow DOM.   
 
-By default, Mux videos are object-fitted using `object-fit: contain`. **To change the object-fit value, the following CSS vars must be used:**  
+By default, Mux videos are object-fitted using `object-fit: contain`. **To change the object-fit value, the following CSS vars can be used:**  
 
 ```
 --media-object-fit
@@ -222,8 +222,49 @@ window.customElements.whenDefined('mux-video')
     });
 ```
 
-#### Lazy-loaded videos
-TODO
+#### Lazy-loading the `<mux-video>` web component
+
+The `<mux-video>` web component is a little bit beefy (~150K gzipped), so it can make sense to lazy-load it. There are a few ways to do that:  
+
+##### Lazy-loading `<mux-video>` everywhere all the time
+
+To automatically lazy-load the `<mux-video>` web component everywhere, simply set the `lazyloadMuxVideo` config setting to `true`. Done.
+
+##### Lazy-loading per `<mux-video>` instance  
+
+Alternatively, you can tell MuxMate to lazy load the `<mux-video>` web component by passing `lazyload: true` to the `getMuxVideo()` method:  
+
+```twig
+{{ asset.getMuxVideo({ lazyload: true }) }}
+```
+
+##### Implementing your own lazy loading strategy
+
+For more advanced use cases, you can prevent MuxMate from automatically loading the `<mux-video>` web component at all, by setting the `muxVideoUrl` config setting to `false`:  
+
+```php
+<?php
+
+return [
+    'muxVideoUrl' => false,
+];
+```
+
+Then, you're free to load the web component yourself, however you like, in whatever lazy fashion you fancy. For example:   
+
+```js
+const video = document.getElementById('video');
+let hasLoadedMuxVideoJs = false;
+const observer = new IntersectionObserver(([{ isIntersecting }]) => {
+    if (isIntersecting && !hasLoadedMuxVideoJs) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.src = 'https://cdn.jsdelivr.net/npm/@mux/mux-video@0';
+        document.body.appendChild(script);
+    }
+});
+```
 
 ## Get images and animated GIFs from videos  
 
@@ -239,8 +280,6 @@ Example:
 ```
 
 ### Get animated GIF from video
-
-### Get image from video
 
 The `getMuxGifUrl()` asset method supports all the same parameters as described in the Mux documentation: [https://docs.mux.com/guides/video/get-images-from-a-video#get-an-animated-gif-from-a-video](https://docs.mux.com/guides/video/get-images-from-a-video#get-an-animated-gif-from-a-video).
 
@@ -265,13 +304,26 @@ The Mux access token ID
 Default: `null`  
 The Mux access token secret key  
 
-#### `muxPlayerUrl` [string|null]
-Default: `'https://cdn.jsdelivr.net/npm/@mux/mux-player'`  
-The URL to the `<mux-player>` JS library. 
-
-#### `muxVideoUrl` [string|null]
+#### `muxVideoUrl` [string|bool|null]
 Default: `'https://cdn.jsdelivr.net/npm/@mux/mux-video@0'`  
-The URL to the `<mux-video>` JS library. 
+The URL to the `<mux-video>` JS library. Set it to a different URL (aliases and environment variables are supported) if you want to use a different distribution, or set it to `false` to handle loading the library completely yourself (i.e. for custom lazy loading purposes or the like).  
+
+#### `lazyloadMuxVideo` [bool]  
+Default: `false`  
+Set to `true` to make MuxMate lazy load the `<mux-video>` library. I.e. instead of automatically being loaded at pageload (albeit async), MuxMate will create an IntersectionObserver and load the script as soon as a `<mux-video>` component enters the viewport.  
+
+#### `scriptSrcNonce` [string|null]  
+If you're implementing a Content-Security Policy (good idea!), you might need to set a nonce for the script tag(s) that MuxMate injects to the page. Here's an example using the ToolMate plugin:  
+
+```php
+<?php
+
+use \vaersaagod\toolmate\ToolMate;
+
+return [
+    'scriptSrcNonce' => ToolMate::getInstance()->csp->createNonce('script-src'),
+];
+```
 
 #### `volumes` [array|null]
 Default: `null`
