@@ -70,7 +70,7 @@ final class SignedUrlsHelper
             $expirationInSeconds = $minExpirationTime;
         }
 
-        $returnPlaceholder = $returnPlaceholder ?? !Craft::$app->getRequest()->getIsConsoleRequest() && Craft::$app->getConfig()->getGeneral()->enableTemplateCaching;
+        $returnPlaceholder = $returnPlaceholder !== false && Craft::$app->getRequest()->getIsSiteRequest() && Craft::$app->getConfig()->getGeneral()->enableTemplateCaching;
         if ($returnPlaceholder) {
             return SignedUrlsHelper::_getPlaceholderToken([
                 'playbackId' => $playbackId,
@@ -127,7 +127,10 @@ final class SignedUrlsHelper
         if (!$signingKey) {
             return null;
         }
-        $placeholderToken = JWT::encode($claims, $signingKey->id, 'HS256');
+        $placeholderToken = JWT::encode([
+            ...$claims,
+            'exp' => time() + 120,
+        ], $signingKey->id, 'HS256');
         return "MUX_TOKEN_PLACEHOLDER{$placeholderToken}MUX_TOKEN_PLACEHOLDER";
     }
 

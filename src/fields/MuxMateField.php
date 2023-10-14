@@ -85,7 +85,6 @@ class MuxMateField extends Field implements PreviewableFieldInterface
     {
         return [
             'muxAssetId' => Schema::TYPE_STRING,
-            'muxPlaybackId' => Schema::TYPE_STRING,
             'muxMetaData' => Schema::TYPE_TEXT,
         ];
     }
@@ -143,8 +142,8 @@ class MuxMateField extends Field implements PreviewableFieldInterface
 
     protected function searchKeywords(mixed $value, ElementInterface $element): string
     {
-        if ($value instanceof MuxMateFieldAttributes && $value->muxPlaybackId) {
-            return $value->muxPlaybackId;
+        if ($value instanceof MuxMateFieldAttributes) {
+            return $value->muxAssetId;
         }
         return '';
     }
@@ -159,23 +158,16 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         }
         /** @var ElementQuery $query */
         $column = ElementHelper::fieldColumnFromField($this);
-        $playbackIdColumn = StringHelper::replace($column, $this->handle, "{$this->handle}_muxPlaybackId");
         $metaDataColumn = StringHelper::replace($column, $this->handle, "{$this->handle}_muxMetaData");
-        if (is_array($value) && (isset($value['muxAssetId']) || isset($value['muxPlaybackId']))) {
-            if (isset($value['muxAssetId'])) {
-                $query->subQuery->andWhere(Db::parseParam("content.$column", $value['muxAssetId']));
-            }
-            if (isset($value['muxPlaybackId'])) {
-                $query->subQuery->andWhere(Db::parseParam("content.$playbackIdColumn", $value['muxPlaybackId']));
-            }
+        if (is_array($value) && (isset($value['muxAssetId']))) {
+            $query->subQuery->andWhere(Db::parseParam("content.$column", $value['muxAssetId']));
             if (isset($value['muxMetaData'])) {
                 $query->subQuery->andWhere(Db::parseParam("content.$metaDataColumn", $value['muxMetaData']));
             }
         } else {
             $query
                 ->subQuery
-                ->andWhere(Db::parseParam("content.$column", $value))
-                ->andWhere(Db::parseParam("content.$playbackIdColumn", $value));
+                ->andWhere(Db::parseParam("content.$column", $value));
         }
     }
 

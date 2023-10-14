@@ -4,6 +4,8 @@
 ### Added
 - Added support for signing URLs
 - Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk  
+### Changed
+- Removed the `muxPlaybackId` content table column 
 
 ## 1.2.0 - 2023-07-01
 ### Added

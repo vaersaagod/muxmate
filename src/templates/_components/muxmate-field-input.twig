@@ -30,22 +30,6 @@
                 value: asset.muxAssetId,
                 class: ['code', not asset.muxAssetId ? 'disabled']|filter
             }) }}
-
-            {{ forms.copyTextField({
-                id: "mux-playback-id-#{asset.id}",
-                label: 'Mux Playback ID'|t('_muxmate'),
-                value: asset.muxPlaybackId,
-                class: ['code', not asset.muxPlaybackId ? 'disabled']|filter
-            }) }}
-
-            {# HLS stream URL #}
-            {{ forms.copyTextField({
-                id: "mux-stream-url-#{asset.id}",
-                label: 'Mux Stream URL (HLS)'|t('_muxmate'),
-                value: asset.muxStatus == 'ready' ? asset.muxStreamUrl : '',
-                class: ['code', not asset.muxStreamUrl or asset.muxStatus != 'ready' ? 'disabled']|filter
-            }) }}
-
         </div>
 
         <hr />

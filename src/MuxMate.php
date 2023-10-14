@@ -54,7 +54,7 @@ class MuxMate extends Plugin
     /** @var string The default URL to the `<mux-video>` web component */
     public const MUX_VIDEO_URL = 'https://cdn.jsdelivr.net/npm/@mux/mux-video@0';
 
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = false;
 
     public function init(): void
@@ -286,38 +286,43 @@ class MuxMate extends Plugin
         }
 
         // Replace signed URL token placeholders
-        Event::on(
-            Response::class,
-            BaseResponse::EVENT_AFTER_PREPARE,
-            static function(Event $event) {
-                /** @var Response|null $response */
-                $response = $event->sender;
-                $content = $response?->content;
-                if (empty($content)) {
-                    return;
-                }
-                preg_match_all('/(MUX_TOKEN_PLACEHOLDER)(.+)(MUX_TOKEN_PLACEHOLDER)/', $content, $matches);
-                if (empty($matches[0] ?? null)) {
-                    return;
-                }
-                for ($i = 0; $i < count($matches[0]); ++$i) {
-                    $match = $matches[0][$i];
-                    $token = '';
-                    try {
-                        $placeholderToken = $matches[2][$i] ?? '';
-                        $decodedPlaceholderToken = SignedUrlsHelper::decodePlaceholderToken($placeholderToken);
-                        if (!empty($decodedPlaceholderToken) && is_array($decodedPlaceholderToken)) {
-                            ['playbackId' => $playbackId, 'aud' => $aud, 'claims' => $claims, 'expirationInSeconds' => $expirationInSeconds] = $decodedPlaceholderToken;
-                            $token = SignedUrlsHelper::getToken($playbackId, $aud, $claims, $expirationInSeconds, false);
-                        }
-                    } catch (\Throwable $e) {
-                        Craft::error($e, __METHOD__);
+        if (
+            Craft::$app->getRequest()->getIsSiteRequest() &&
+            Craft::$app->getConfig()->getGeneral()->enableTemplateCaching
+        ) {
+            Event::on(
+                Response::class,
+                BaseResponse::EVENT_AFTER_PREPARE,
+                static function(Event $event) {
+                    /** @var Response|null $response */
+                    $response = $event->sender;
+                    $content = $response?->content;
+                    if (empty($content)) {
+                        return;
                     }
-                    $content = str_replace($match, $token, $content);
+                    preg_match_all('/(MUX_TOKEN_PLACEHOLDER)(.+)(MUX_TOKEN_PLACEHOLDER)/', $content, $matches);
+                    if (empty($matches[0] ?? null)) {
+                        return;
+                    }
+                    for ($i = 0; $i < count($matches[0]); ++$i) {
+                        $match = $matches[0][$i];
+                        $token = '';
+                        try {
+                            $placeholderToken = $matches[2][$i] ?? '';
+                            $decodedPlaceholderToken = SignedUrlsHelper::decodePlaceholderToken($placeholderToken);
+                            if (!empty($decodedPlaceholderToken) && is_array($decodedPlaceholderToken)) {
+                                ['playbackId' => $playbackId, 'aud' => $aud, 'claims' => $claims, 'expirationInSeconds' => $expirationInSeconds] = $decodedPlaceholderToken;
+                                $token = SignedUrlsHelper::getToken($playbackId, $aud, $claims, $expirationInSeconds, false);
+                            }
+                        } catch (\Throwable $e) {
+                            Craft::error($e, __METHOD__);
+                        }
+                        $content = str_replace($match, $token, $content);
+                    }
+                    $response->content = $content;
                 }
-                $response->content = $content;
-            }
-        );
+            );
+        }
 
     }
 }
