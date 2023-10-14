@@ -7,7 +7,9 @@ use MuxPhp\ApiException;
 use MuxPhp\Configuration;
 use MuxPhp\Models\Asset as MuxAsset;
 use MuxPhp\Models\CreateAssetRequest;
+use MuxPhp\Models\CreatePlaybackIDRequest;
 use MuxPhp\Models\InputSettings;
+use MuxPhp\Models\PlaybackID;
 use MuxPhp\Models\PlaybackPolicy;
 
 use vaersaagod\muxmate\MuxMate;
@@ -62,6 +64,37 @@ final class MuxApiHelper
     {
         $apiClient = MuxApiHelper::getApiClient();
         $apiClient->deleteAsset($muxAssetId);
+    }
+
+    /**
+     * @param string $muxAssetId
+     * @param string $playbackId
+     * @return void
+     * @throws ApiException
+     * @throws \Exception
+     */
+    public static function deletePlaybackId(string $muxAssetId, string $playbackId): void
+    {
+        $apiClient = MuxApiHelper::getApiClient();
+        $apiClient->deleteAssetPlaybackId($muxAssetId, $playbackId);
+    }
+
+    /**
+     * @param string $muxAssetId
+     * @param string $policy
+     * @return PlaybackID|null
+     * @throws ApiException
+     * @throws \Exception
+     */
+    public static function createPlaybackId(string $muxAssetId, string $policy): ?PlaybackID
+    {
+        $apiClient = MuxApiHelper::getApiClient();
+        $createPlaybackIdRequest = new CreatePlaybackIDRequest([
+            'policy' => $policy,
+        ]);
+        return $apiClient
+            ->createAssetPlaybackId($muxAssetId, $createPlaybackIdRequest)
+            ->getData();
     }
 
     /**

@@ -119,7 +119,7 @@ final class MuxMateHelper
         }
 
         // If the policy is signed; create a JWT signing token
-        if ($playbackId->policy === 'signed') {
+        if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
             if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_THUMBNAIL, $params)) {
                 return null;
             }
@@ -164,7 +164,7 @@ final class MuxMateHelper
         $params = $params ?? [];
 
         // If the policy is signed; create a JWT signing token
-        if ($playbackId->policy === 'signed') {
+        if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
             if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_GIF, $params)) {
                 return null;
             }
@@ -231,7 +231,7 @@ final class MuxMateHelper
             $params['download'] = $filename ?: $playbackId->__toString();
         }
 
-        if ($playbackId->policy === 'signed') {
+        if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
             if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, MuxMateHelper::getMuxVideoDuration($asset))) {
                 return null;
             }
@@ -274,7 +274,7 @@ final class MuxMateHelper
         $params = [];
 
         // If the policy is signed; create a JWT signing token
-        if ($playbackId->policy === 'signed') {
+        if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
             if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, MuxMateHelper::getMuxVideoDuration($asset))) {
                 return null;
             }
@@ -394,17 +394,8 @@ final class MuxMateHelper
             return false;
         }
 
-        /** @var PlaybackID[] $playbackIds */
-        $playbackIds = $muxAsset->getPlaybackIds() ?? null;
-        if (!empty($playbackIds)) {
-            $muxPlaybackId = $playbackIds[0]->getId();
-        } else {
-            $muxPlaybackId = null;
-        }
-
         return MuxMateHelper::saveMuxAttributesToAsset($asset, [
             'muxAssetId' => $muxAssetId,
-            'muxPlaybackId' => $muxPlaybackId,
             'muxMetaData' => (array)$muxAsset->jsonSerialize(),
         ]);
 

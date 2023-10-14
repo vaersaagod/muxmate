@@ -16,6 +16,7 @@ use craft\helpers\Html;
 use craft\helpers\StringHelper;
 use craft\web\View;
 
+use vaersaagod\muxmate\helpers\MuxMateHelper;
 use vaersaagod\muxmate\models\MuxMateFieldAttributes;
 
 use yii\base\InvalidConfigException;
@@ -43,6 +44,9 @@ class MuxMateField extends Field implements PreviewableFieldInterface
      */
     public function getTableAttributeHtml(mixed $value, ElementInterface $element): string
     {
+        if (!$element instanceof Asset || $element->kind !== Asset::KIND_VIDEO) {
+            return '';
+        }
         if (!$value instanceof MuxMateFieldAttributes || !$value->muxAssetId) {
             $label = \Craft::t('_muxmate', 'Video does not have a Mux asset');
             $content = '❌';
@@ -55,6 +59,13 @@ class MuxMateField extends Field implements PreviewableFieldInterface
             } else {
                 $label = \Craft::t('_muxmate', 'Mux video is ready to play!');
                 $content = '👍';
+                try {
+                    if (MuxMateHelper::getMuxPlaybackId($element, MuxMateHelper::PLAYBACK_POLICY_SIGNED)) {
+                        $content .= '🔒';
+                    }
+                } catch (\Throwable $e) {
+                    Craft::error($e, __METHOD__);
+                }
             }
         }
         return Html::tag('span', $content, [

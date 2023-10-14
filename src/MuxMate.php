@@ -171,7 +171,7 @@ class MuxMate extends Plugin
                     return;
                 }
                 $thumbSize = max($event->width, $event->height);
-                $url = MuxMateHelper::getMuxImageUrl($asset, ['width' => $thumbSize, 'height' => $thumbSize, 'fit_mode' => 'preserve']);
+                $url = MuxMateHelper::getMuxImageUrl($asset, ['width' => $thumbSize, 'height' => $thumbSize, 'fit_mode' => 'preserve'], MuxMateHelper::PLAYBACK_POLICY_PUBLIC);
                 if (empty($url)) {
                     return;
                 }

@@ -2,12 +2,14 @@
 
 ## Unreleased
 ### Added
-- Added support for signing URLs
-- Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk  
+- Added support for signing URLs  
+- Added support for Mux' `max_resolution` param  
+- Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk 
+- Added the `_muxmate/create/playback-ids` command for creating new (or missing) Mux playback IDs for existing Mux assets in bulk  
 ### Changed
 - Removed the `muxPlaybackId` content table column 
 
-## 1.2.0 - 2023-07-01
+## 1.2.0 - 2023-07-01  
 ### Added
 - Added the ability to have MuxMate automatically lazyload the `<mux-video>` web component
 - Added the ability to have MuxMate *not* load the `<mux-video>` web component JS library at all
@@ -19,7 +21,7 @@
 ### Improved  
 - Improved video previews when assets are missing their Mux playback ID  
 
-## 1.1.3 - 2023-06-23
+## 1.1.3 - 2023-06-23  
 ### Fixed
 - Fixed dumb bug
 

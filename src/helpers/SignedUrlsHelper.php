@@ -38,7 +38,7 @@ final class SignedUrlsHelper
     {
 
         if ($playbackId instanceof MuxPlaybackId) {
-            if ($playbackId->policy !== 'signed') {
+            if ($playbackId->policy !== MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
                 return null;
             }
             $playbackId = $playbackId->__toString();

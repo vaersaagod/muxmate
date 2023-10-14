@@ -73,10 +73,8 @@ class WebhookController extends Controller
             case 'video.asset.updated':
             case 'video.asset.static_renditions.ready':
                 $muxAssetData = $webhookData['data'];
-                $muxPlaybackId = $muxAssetData['playback_ids'][0]['id'] ?? '';
                 MuxMateHelper::saveMuxAttributesToAsset($asset, [
                     'muxAssetId' => $muxAssetId,
-                    'muxPlaybackId' => $muxPlaybackId,
                     'muxMetaData' => $muxAssetData,
                 ]);
                 break;
