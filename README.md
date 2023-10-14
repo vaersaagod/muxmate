@@ -124,6 +124,20 @@ In your `config/general.php` file:
     '@videosBaseUrl' => App::env('VIDEOS_ALIAS') ?? App::env('PRIMARY_SITE_URL')
 ],
 ```
+## Creating (or updating!) Mux assets for existing Craft video assets  
+
+MuxMate assets are created when videos are uploaded to Craft, and simply adding a MuxMate field to a volume won't do anything, in terms of any existing video assets in that volume.  
+
+### Creating (or updating!) a Mux asset for a single video asset  
+
+If you want MuxMate to create a Mux asset for a single video asset, there are two easy options:  
+
+1. Simply re-save the asset (manually, via the control panel – MuxMate assets are *not* created or updated when using Craft's `resave` CLI command. This is on purpose!)  
+2. Click the "Create Mux asset" button on the asset edit page. Unlike resaving the asset manually, this will not update the asset's `dateUpdated` attribute, to the extent that matters.  
+
+### Creating (or updating!) Mux assets for videos in bulk  
+
+If you want MuxMate to create (or update) for a lot of videos at once, you'll need to reach for the `_muxmate`
 
 ## Rendering and playing videos
 

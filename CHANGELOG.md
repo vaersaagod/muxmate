@@ -1,5 +1,10 @@
 # MuxMate Changelog
 
+## Unreleased
+### Added
+- Added support for signing URLs
+- Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk  
+
 ## 1.2.0 - 2023-07-01
 ### Added
 - Added the ability to have MuxMate automatically lazyload the `<mux-video>` web component

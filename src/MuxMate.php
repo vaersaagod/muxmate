@@ -31,8 +31,8 @@ use Psr\Log\LogLevel;
 use vaersaagod\muxmate\assetpreviews\MuxVideoPreview;
 use vaersaagod\muxmate\behaviors\MuxAssetBehavior;
 use vaersaagod\muxmate\fields\MuxMateField;
-use vaersaagod\muxmate\helpers\MuxApiHelper;
 use vaersaagod\muxmate\helpers\MuxMateHelper;
+use vaersaagod\muxmate\helpers\SignedUrlsHelper;
 use vaersaagod\muxmate\models\Settings;
 
 use yii\base\Event;
@@ -157,7 +157,7 @@ class MuxMate extends Plugin
             }
         );
 
-        // Replace asset thumbs for DAM-imported videos (which are stored as json, Embedded Assets-style)
+        // Replace asset thumbs for Mux videos
         Event::on(
             Assets::class,
             Assets::EVENT_DEFINE_THUMB_URL,
@@ -165,16 +165,17 @@ class MuxMate extends Plugin
                 $asset = $event->asset;
                 if (
                     $asset->kind !== Asset::KIND_VIDEO ||
+                    !MuxMateHelper::getMuxAssetId($asset) ||
                     MuxMateHelper::getMuxStatus($asset) !== 'ready'
                 ) {
                     return;
                 }
-                $muxPlaybackId = MuxMateHelper::getMuxPlaybackId($asset);
-                if (!$muxPlaybackId) {
+                $thumbSize = max($event->width, $event->height);
+                $url = MuxMateHelper::getMuxImageUrl($asset, ['width' => $thumbSize, 'height' => $thumbSize, 'fit_mode' => 'preserve']);
+                if (empty($url)) {
                     return;
                 }
-                $thumbSize = max($event->width, $event->height);
-                $event->url = MuxApiHelper::getImageUrl($muxPlaybackId, ['width' => $thumbSize, 'height' => $thumbSize, 'fit_mode' => 'preserve']);
+                $event->url = $url;
             }
         );
 
@@ -187,7 +188,7 @@ class MuxMate extends Plugin
                     !$element instanceof Asset ||
                     $element->kind !== Asset::KIND_VIDEO ||
                     $event->size !== 'large' ||
-                    !MuxMateHelper::getMuxPlaybackId($element) ||
+                    !MuxMateHelper::getMuxAssetId($element) ||
                     MuxMateHelper::getMuxStatus($element) !== 'ready'
                 ) {
                     return;
@@ -209,7 +210,7 @@ class MuxMate extends Plugin
                         padding: 0 4px;
                     }
                 CSS;
-                \Craft::$app->getView()->registerCss($css);
+                Craft::$app->getView()->registerCss($css);
             }
         );
 
@@ -266,14 +267,14 @@ class MuxMate extends Plugin
 
         // Replace nonce placeholders
         if (
-            \Craft::$app->getRequest()->getIsSiteRequest() &&
+            Craft::$app->getRequest()->getIsSiteRequest() &&
             $scriptSrcNonce = $this->getSettings()->scriptSrcNonce
         ) {
             Event::on(
                 Response::class,
                 BaseResponse::EVENT_AFTER_PREPARE,
                 static function(Event $event) use ($scriptSrcNonce) {
-                    /** @var Response $response */
+                    /** @var Response|null $response */
                     $response = $event->sender;
                     $content = $response?->content;
                     if (empty($content)) {
@@ -283,5 +284,40 @@ class MuxMate extends Plugin
                 }
             );
         }
+
+        // Replace signed URL token placeholders
+        Event::on(
+            Response::class,
+            BaseResponse::EVENT_AFTER_PREPARE,
+            static function(Event $event) {
+                /** @var Response|null $response */
+                $response = $event->sender;
+                $content = $response?->content;
+                if (empty($content)) {
+                    return;
+                }
+                preg_match_all('/(MUX_TOKEN_PLACEHOLDER)(.+)(MUX_TOKEN_PLACEHOLDER)/', $content, $matches);
+                if (empty($matches[0] ?? null)) {
+                    return;
+                }
+                for ($i = 0; $i < count($matches[0]); ++$i) {
+                    $match = $matches[0][$i];
+                    $token = '';
+                    try {
+                        $placeholderToken = $matches[2][$i] ?? '';
+                        $decodedPlaceholderToken = SignedUrlsHelper::decodePlaceholderToken($placeholderToken);
+                        if (!empty($decodedPlaceholderToken) && is_array($decodedPlaceholderToken)) {
+                            ['playbackId' => $playbackId, 'aud' => $aud, 'claims' => $claims, 'expirationInSeconds' => $expirationInSeconds] = $decodedPlaceholderToken;
+                            $token = SignedUrlsHelper::getToken($playbackId, $aud, $claims, $expirationInSeconds, false);
+                        }
+                    } catch (\Throwable $e) {
+                        Craft::error($e, __METHOD__);
+                    }
+                    $content = str_replace($match, $token, $content);
+                }
+                $response->content = $content;
+            }
+        );
+
     }
 }

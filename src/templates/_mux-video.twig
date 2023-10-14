@@ -1,56 +1,63 @@
-{% set attributes = {
-    'playback-id': video.muxPlaybackId,
-    'metadata-video-title': video.title,
-    'metadata-video-id': video.uid
-} %}
+{% set playbackId = playbackId ?? null %}
+{% set token = token ?? null %}
 
-{% if inline ?? false %}
-    {% set attributes = attributes|merge({
-        autoplay: 'muted',
-        loop: true,
-        muted: true,
-        playsinline: true,
-        disablePictureInPicture: true
-    }) %}
-{% endif %}
+{% if playbackId %}
 
-{% apply attr(attributes) %}
-    <mux-video></mux-video>
-{% endapply %}
+    {% set attributes = {
+        'playback-id': playbackId ~ (token ? "?token=#{token}"),
+        'metadata-video-title': video.title,
+        'metadata-video-id': video.uid
+    } %}
 
-{% css %}
-    mux-video { display: block; }
-{% endcss %}
-
-{% set muxVideoUrl = muxVideoUrl ?? null %}
-
-{% if muxVideoUrl %}
-    {% set lazyload = lazyload ?? false %}
-    {% if nonce ?? null %}
-        {% set nonce = '%%%MUXMATE_NONCE_PLACEHOLDER%%%' %}
+    {% if inline ?? false %}
+        {% set attributes = attributes|merge({
+            autoplay: 'muted',
+            loop: true,
+            muted: true,
+            playsinline: true,
+            disablePictureInPicture: true
+        }) %}
     {% endif %}
-    {% if lazyload %}
-        {% script with { nonce } %}
-            document.addEventListener('DOMContentLoaded', () => {
-                let muxVideoLoaded = false;
-                let observer = new IntersectionObserver(entries => {
-                    entries.forEach(({isIntersecting}) => {
-                        if (!isIntersecting || muxVideoLoaded) {
-                            return;
-                        }
-                        muxVideoLoaded = true;
-                        const script = document.createElement('script');
-                        script.src = '{{ muxVideoUrl }}';
-                        script.async = true;
-                        document.body.appendChild(script);
-                        observer.disconnect();
-                        observer = null;
+
+    {% apply attr(attributes) %}
+        <mux-video></mux-video>
+    {% endapply %}
+
+    {% css %}
+        mux-video { display: block; }
+    {% endcss %}
+
+    {% set muxVideoUrl = muxVideoUrl ?? null %}
+
+    {% if muxVideoUrl %}
+        {% set lazyload = lazyload ?? false %}
+        {% if nonce ?? null %}
+            {% set nonce = '%%%MUXMATE_NONCE_PLACEHOLDER%%%' %}
+        {% endif %}
+        {% if lazyload %}
+            {% script with { nonce } %}
+                document.addEventListener('DOMContentLoaded', () => {
+                    let muxVideoLoaded = false;
+                    let observer = new IntersectionObserver(entries => {
+                        entries.forEach(({isIntersecting}) => {
+                            if (!isIntersecting || muxVideoLoaded) {
+                                return;
+                            }
+                            muxVideoLoaded = true;
+                            const script = document.createElement('script');
+                            script.src = '{{ muxVideoUrl }}';
+                            script.async = true;
+                            document.body.appendChild(script);
+                            observer.disconnect();
+                            observer = null;
+                        });
                     });
+                    document.body.querySelectorAll('mux-video').forEach(muxVideo => observer.observe(muxVideo));
                 });
-                document.body.querySelectorAll('mux-video').forEach(muxVideo => observer.observe(muxVideo));
-            });
-        {% endscript %}
-    {% else %}
-        {% js muxVideoUrl with { async: true, nonce } %}
+            {% endscript %}
+        {% else %}
+            {% js muxVideoUrl with { async: true, nonce } %}
+        {% endif %}
     {% endif %}
+
 {% endif %}

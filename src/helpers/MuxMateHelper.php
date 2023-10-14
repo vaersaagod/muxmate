@@ -2,22 +2,50 @@
 
 namespace vaersaagod\muxmate\helpers;
 
+use Craft;
 use craft\base\Element;
 use craft\base\FieldInterface;
 use craft\elements\Asset;
 use craft\helpers\App;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
+use craft\helpers\UrlHelper;
 
 use Illuminate\Support\Collection;
 
+use MuxPhp\Models\PlaybackID;
+
 use vaersaagod\muxmate\fields\MuxMateField;
 use vaersaagod\muxmate\models\MuxMateFieldAttributes;
+use vaersaagod\muxmate\models\MuxPlaybackId;
 use vaersaagod\muxmate\models\VolumeSettings;
 use vaersaagod\muxmate\MuxMate;
 
-class MuxMateHelper
+use yii\base\InvalidConfigException;
+
+final class MuxMateHelper
 {
+
+    /** @var string */
+    public const MUX_STREAMING_DOMAIN = 'https://stream.mux.com';
+
+    /** @var string */
+    public const MUX_IMAGE_DOMAIN = 'https://image.mux.com';
+
+    /** @var string */
+    public const PLAYBACK_POLICY_PUBLIC = 'public';
+
+    /** @var string */
+    public const PLAYBACK_POLICY_SIGNED = 'signed';
+
+    /** @var string */
+    public const STATIC_RENDITION_QUALITY_HIGH = 'high';
+
+    /** @var string */
+    public const STATIC_RENDITION_QUALITY_MEDIUM = 'medium';
+
+    /** @var string */
+    public const STATIC_RENDITION_QUALITY_LOW = 'low';
 
     /** @var MuxMateField[] */
     private static array $_muxMateFieldsByVolume = [];
@@ -28,16 +56,233 @@ class MuxMateHelper
      */
     public static function getMuxAssetId(?Asset $asset): ?string
     {
-        return static::getMuxMateFieldAttributes($asset)?->muxAssetId;
+        return MuxMateHelper::getMuxMateFieldAttributes($asset)?->muxAssetId;
     }
 
     /**
      * @param Asset|null $asset
-     * @return string|null
+     * @param string|null $policy
+     * @return MuxPlaybackId|null
+     * @throws InvalidConfigException
      */
-    public static function getMuxPlaybackId(?Asset $asset): ?string
+    public static function getMuxPlaybackId(?Asset $asset, ?string $policy = null): ?MuxPlaybackId
     {
-        return static::getMuxMateFieldAttributes($asset)?->muxPlaybackId;
+        $policy = $policy ?? MuxMate::getInstance()->getSettings()->defaultPolicy;
+        if (!in_array($policy, [MuxMateHelper::PLAYBACK_POLICY_SIGNED, MuxMateHelper::PLAYBACK_POLICY_PUBLIC], true)) {
+            throw new InvalidConfigException("Invalid playback policy \"$policy\"");
+        }
+        $data = MuxMateHelper::getMuxMateFieldAttributes($asset)?->muxMetaData ?? [];
+        $playbackId = Collection::make($data['playback_ids'] ?? [])
+            ->where('policy', $policy)
+            ->first();
+        if (!$playbackId) {
+            return null;
+        }
+        return new MuxPlaybackId($playbackId);
+    }
+
+    /**
+     * See https://docs.mux.com/guides/video/get-images-from-a-video for params
+     * @param Asset|null $asset
+     * @param array|null $params
+     * @param string|null $policy
+     * @return string|null
+     * @throws InvalidConfigException
+     */
+    public static function getMuxImageUrl(?Asset $asset, ?array $params = null, ?string $policy = null): ?string
+    {
+
+        if (
+            !$asset instanceof Asset ||
+            MuxMateHelper::getMuxStatus($asset) !== 'ready') {
+            return null;
+        }
+
+        $playbackId = MuxMateHelper::getMuxPlaybackId($asset, $policy);
+        if (!$playbackId instanceof MuxPlaybackId) {
+            return null;
+        }
+
+        if (!$playbackId->validate()) {
+            Craft::error("Invalid playback ID {$playbackId}: " . Json::encode($playbackId->getErrors()), __METHOD__);
+            return null;
+        }
+
+        // Normalize params
+        $params = $params ?? [];
+        if (!isset($params['fit_mode'])) {
+            if (isset($params['width']) && isset($params['height'])) {
+                $params['fit_mode'] = 'smartcrop';
+            } else {
+                $params['fit_mode'] = 'preserve';
+            }
+        }
+
+        // If the policy is signed; create a JWT signing token
+        if ($playbackId->policy === 'signed') {
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_THUMBNAIL, $params)) {
+                return null;
+            }
+            $params = [
+                'token' => $token,
+            ];
+        }
+
+        return UrlHelper::url(MuxMateHelper::MUX_IMAGE_DOMAIN . '/' . $playbackId . '/thumbnail.jpg', $params);
+
+    }
+
+    /**
+     * See https://docs.mux.com/guides/video/get-images-from-a-video#get-an-animated-gif-from-a-video for params
+     *
+     * @param Asset|null $asset
+     * @param array|null $params
+     * @param string|null $policy
+     * @return string|null
+     * @throws InvalidConfigException
+     */
+    public static function getMuxGifUrl(?Asset $asset, ?array $params = null, ?string $policy = null): ?string
+    {
+
+        if (
+            !$asset instanceof Asset ||
+            MuxMateHelper::getMuxStatus($asset) !== 'ready') {
+            return null;
+        }
+
+        $playbackId = MuxMateHelper::getMuxPlaybackId($asset, $policy);
+        if (!$playbackId instanceof MuxPlaybackId) {
+            return null;
+        }
+
+        if (!$playbackId->validate()) {
+            Craft::error("Invalid playback ID {$playbackId}: " . Json::encode($playbackId->getErrors()), __METHOD__);
+            return null;
+        }
+
+        // Normalize params
+        $params = $params ?? [];
+
+        // If the policy is signed; create a JWT signing token
+        if ($playbackId->policy === 'signed') {
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_GIF, $params)) {
+                return null;
+            }
+            $params = [
+                'token' => $token,
+            ];
+        }
+
+        return UrlHelper::url(MuxMateHelper::MUX_IMAGE_DOMAIN . '/' . $playbackId . "/animated.gif", $params);
+
+    }
+
+    /**
+     * @param Asset|null $asset
+     * @param string|null $quality "high", "medium" or "low"
+     * @param string|null $policy "public" or "signed"
+     * @param bool $download
+     * @param string|null $filename
+     * @return string|null
+     * @throws InvalidConfigException
+     */
+    public static function getMuxMp4Url(?Asset $asset, ?string $quality = null, ?string $policy = null, bool $download = false, ?string $filename = null): ?string
+    {
+
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+
+        $muxData = MuxMateHelper::getMuxData($asset) ?? [];
+        $staticRenditions = $muxData['static_renditions'] ?? [];
+        if (($staticRenditions['status'] ?? null) !== 'ready') {
+            return null;
+        }
+
+        $playbackId = MuxMateHelper::getMuxPlaybackId($asset, $policy);
+        if (!$playbackId instanceof MuxPlaybackId) {
+            return null;
+        }
+
+        $quality = $quality ?: MuxMate::getInstance()->getSettings()->defaultMp4Quality;
+        $qualities = [
+            MuxMateHelper::STATIC_RENDITION_QUALITY_HIGH,
+            MuxMateHelper::STATIC_RENDITION_QUALITY_MEDIUM,
+            MuxMateHelper::STATIC_RENDITION_QUALITY_LOW,
+        ];
+        if (!in_array($quality, $qualities, true)) {
+            Craft::error("Invalid quality \"$quality\" (needs to be one of " . implode(', ', $qualities) . ')', __METHOD__);
+            return null;
+        }
+
+        // Get the highest available quality
+        $availableQualities = array_intersect($qualities, MuxMateHelper::getStaticRenditions($asset, true));
+        if (empty($availableQualities)) {
+            return null;
+        }
+
+        if (!in_array($quality, $availableQualities, true)) {
+            $quality = $availableQualities[0];
+        }
+
+        $params = [];
+
+        if ($download) {
+            $params['download'] = $filename ?: $playbackId->__toString();
+        }
+
+        if ($playbackId->policy === 'signed') {
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, MuxMateHelper::getMuxVideoDuration($asset))) {
+                return null;
+            }
+            $params['token'] = $token;
+        }
+
+        if (empty($params)) {
+            $params = null;
+        }
+
+        return UrlHelper::url(MuxMateHelper::MUX_STREAMING_DOMAIN . "/" . $playbackId . "/$quality.mp4", $params);
+
+    }
+
+    /**
+     * @param Asset|null $asset
+     * @param string|null $policy
+     * @return string|null
+     * @throws InvalidConfigException
+     */
+    public static function getMuxStreamUrl(?Asset $asset, ?string $policy = null): ?string
+    {
+
+        if (
+            !$asset instanceof Asset ||
+            MuxMateHelper::getMuxStatus($asset) !== 'ready') {
+            return null;
+        }
+
+        $playbackId = MuxMateHelper::getMuxPlaybackId($asset, $policy);
+        if (!$playbackId instanceof MuxPlaybackId) {
+            return null;
+        }
+
+        if (!$playbackId->validate()) {
+            Craft::error("Invalid playback ID {$playbackId}: " . Json::encode($playbackId->getErrors()), __METHOD__);
+            return null;
+        }
+
+        $params = [];
+
+        // If the policy is signed; create a JWT signing token
+        if ($playbackId->policy === 'signed') {
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, MuxMateHelper::getMuxVideoDuration($asset))) {
+                return null;
+            }
+            $params['token'] = $token;
+        }
+
+        return UrlHelper::url(MuxMateHelper::MUX_STREAMING_DOMAIN . "/$playbackId.m3u8", $params);
+
     }
 
     /**
@@ -46,7 +291,10 @@ class MuxMateHelper
      */
     public static function getMuxStatus(?Asset $asset): ?string
     {
-        $data = static::getMuxMateFieldAttributes($asset)?->muxMetaData;
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        $data = MuxMateHelper::getMuxMateFieldAttributes($asset)?->muxMetaData;
         if (!$data) {
             return null;
         }
@@ -55,11 +303,54 @@ class MuxMateHelper
 
     /**
      * @param Asset|null $asset
+     * @return float|null
+     */
+    public static function getMuxVideoDuration(?Asset $asset): ?float
+    {
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        return MuxMateHelper::getMuxData($asset)['duration'] ?? null;
+    }
+
+    /**
+     * @param Asset|null $asset
      * @return array|null
      */
     public static function getMuxData(?Asset $asset): ?array
     {
-        return static::getMuxMateFieldAttributes($asset)?->muxMetaData;
+        return MuxMateHelper::getMuxMateFieldAttributes($asset)?->muxMetaData;
+    }
+
+    /**
+     * Returns an array of all available static renditions, indexed by quality
+     *
+     * @param Asset|null $asset
+     * @param bool $keysOnly Whether to only return a simple array of the available static rendition qualities' names (i.e. "high", "medium" and "low")
+     * @return array|null
+     */
+    public static function getStaticRenditions(?Asset $asset, bool $keysOnly = false): ?array
+    {
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        $muxData = MuxMateHelper::getMuxData($asset) ?? [];
+        $staticRenditions = $muxData['static_renditions'] ?? [];
+        if (($staticRenditions['status'] ?? null) !== 'ready') {
+            return null;
+        }
+        $staticRenditionsByQuality = [];
+        foreach ($staticRenditions['files'] ?? [] as $staticRendition) {
+            $quality = explode('.', $staticRendition['name'])[0];
+            $staticRenditionsByQuality[$quality] = $staticRendition;
+        }
+        if (empty($staticRenditionsByQuality)) {
+            return null;
+        }
+        if ($keysOnly) {
+            return array_keys($staticRenditionsByQuality);
+        }
+        return $staticRenditionsByQuality;
     }
 
     /**
@@ -69,43 +360,51 @@ class MuxMateHelper
     public static function updateOrCreateMuxAsset(?Asset $asset): bool
     {
 
-        $muxAssetId = static::getMuxAssetId($asset);
+        $muxAssetId = MuxMateHelper::getMuxAssetId($asset);
+        $muxAsset = null;
 
+        // Try to get existing Mux asset. If it doesn't exist, we'll create a new one.
         if ($muxAssetId) {
-            // Get existing Mux asset
             try {
                 $muxAsset = MuxApiHelper::getAsset($muxAssetId);
             } catch (\Throwable $e) {
-                \Craft::error($e, __METHOD__);
-                $muxAsset = null;
+                Craft::error($e, __METHOD__);
+                MuxMateHelper::deleteMuxAttributesForAsset($asset);
             }
-        } else {
-            $muxAsset = null;
         }
 
+        // Create a new Mux asset?
         if (!$muxAsset) {
-
-            // Create a new Mux asset
             try {
-                $assetUrl = static::_getAssetUrl($asset);
+                $assetUrl = MuxMateHelper::_getAssetUrl($asset);
                 if (!$assetUrl) {
                     throw new \Exception("Asset ID \"$asset->id\" has no URL");
                 }
                 $muxAsset = MuxApiHelper::createAsset($assetUrl);
+                $muxAssetId = $muxAsset->getId();
             } catch (\Throwable $e) {
-                \Craft::error($e, __METHOD__);
+                Craft::error($e, __METHOD__);
+                $muxAsset = null;
             }
         }
 
         if (!$muxAsset) {
-            // Still no Mux asset; make sure the data on the Craft asset is wiped out and bail
-            static::deleteMuxAttributesForAsset($asset);
+            // Still no Mux asset; make sure any Mux data set on the Craft asset is wiped out and then bail
+            MuxMateHelper::deleteMuxAttributesForAsset($asset);
             return false;
         }
 
-        return static::saveMuxAttributesToAsset($asset, [
-            'muxAssetId' => $muxAsset->getId(),
-            'muxPlaybackId' => $muxAsset->getPlaybackIds()[0]['id'] ?? null,
+        /** @var PlaybackID[] $playbackIds */
+        $playbackIds = $muxAsset->getPlaybackIds() ?? null;
+        if (!empty($playbackIds)) {
+            $muxPlaybackId = $playbackIds[0]->getId();
+        } else {
+            $muxPlaybackId = null;
+        }
+
+        return MuxMateHelper::saveMuxAttributesToAsset($asset, [
+            'muxAssetId' => $muxAssetId,
+            'muxPlaybackId' => $muxPlaybackId,
             'muxMetaData' => (array)$muxAsset->jsonSerialize(),
         ]);
 
@@ -119,7 +418,7 @@ class MuxMateHelper
     public static function saveMuxAttributesToAsset(Asset $asset, array $attributes): bool
     {
 
-        if (!static::_setMuxMateFieldAttributes($asset, $attributes)) {
+        if (!MuxMateHelper::_setMuxMateFieldAttributes($asset, $attributes)) {
             return false;
         }
 
@@ -127,14 +426,14 @@ class MuxMateHelper
         $asset->resaving = true;
 
         try {
-            $success = \Craft::$app->getElements()->saveElement($asset, false);
+            $success = Craft::$app->getElements()->saveElement($asset, false);
         } catch (\Throwable $e) {
-            \Craft::error($e, __METHOD__);
+            Craft::error($e, __METHOD__);
             return false;
         }
 
         if (!$success) {
-            \Craft::error("Unable to save Mux attributes to asset: " . Json::encode($asset->getErrors()), __METHOD__);
+            Craft::error("Unable to save Mux attributes to asset: " . Json::encode($asset->getErrors()), __METHOD__);
             return false;
         }
 
@@ -149,26 +448,26 @@ class MuxMateHelper
     public static function deleteMuxAttributesForAsset(?Asset $asset, bool $alsoDeleteMuxAsset = true): bool
     {
 
-        $muxAssetId = static::getMuxMateFieldAttributes($asset)?->muxAssetId;
+        $muxAssetId = MuxMateHelper::getMuxMateFieldAttributes($asset)?->muxAssetId;
 
         if (!$muxAssetId) {
             return false;
         }
 
-        static::_setMuxMateFieldAttributes($asset, null);
+        MuxMateHelper::_setMuxMateFieldAttributes($asset, null);
 
         $asset->setScenario(Element::SCENARIO_ESSENTIALS);
         $asset->resaving = true;
 
         try {
-            $success = \Craft::$app->getElements()->saveElement($asset, false);
+            $success = Craft::$app->getElements()->saveElement($asset, false);
         } catch (\Throwable $e) {
-            \Craft::error($e, __METHOD__);
+            Craft::error($e, __METHOD__);
             return false;
         }
 
         if (!$success) {
-            \Craft::error("Unable to delete Mux attributes for asset: " . Json::encode($asset->getErrors()));
+            Craft::error("Unable to delete Mux attributes for asset: " . Json::encode($asset->getErrors()));
             return false;
         }
 
@@ -190,7 +489,7 @@ class MuxMateHelper
      */
     public static function getMuxMateFieldAttributes(?Asset $asset): ?MuxMateFieldAttributes
     {
-        $muxMateFieldHandle = static::_getMuxMateFieldForAsset($asset)?->handle;
+        $muxMateFieldHandle = MuxMateHelper::_getMuxMateFieldForAsset($asset)?->handle;
         if (!$muxMateFieldHandle) {
             return null;
         }
@@ -204,12 +503,12 @@ class MuxMateHelper
     /**
      * @param Asset|null $asset
      * @param array|null $attributes
-     * @return void
+     * @return bool
      */
     private static function _setMuxMateFieldAttributes(?Asset $asset, ?array $attributes = null): bool
     {
 
-        $muxMateFieldHandle = static::_getMuxMateFieldForAsset($asset)?->handle;
+        $muxMateFieldHandle = MuxMateHelper::_getMuxMateFieldForAsset($asset)?->handle;
 
         if (!$muxMateFieldHandle) {
             return false;
@@ -236,22 +535,22 @@ class MuxMateHelper
 
             $volumeHandle = $asset->getVolume()->handle;
 
-            if (isset(static::$_muxMateFieldsByVolume[$volumeHandle])) {
-                return static::$_muxMateFieldsByVolume[$volumeHandle];
+            if (isset(MuxMateHelper::$_muxMateFieldsByVolume[$volumeHandle])) {
+                return MuxMateHelper::$_muxMateFieldsByVolume[$volumeHandle];
             }
 
-            /** @var FieldInterface|null $muxMateField */
+            /** @var MuxMateField|null $muxMateField */
             $muxMateField = Collection::make($asset->getFieldLayout()->getCustomFields())
                 ->first(static fn(FieldInterface $field) => $field instanceof MuxMateField);
 
-            static::$_muxMateFieldsByVolume[$volumeHandle] = $muxMateField;
+            MuxMateHelper::$_muxMateFieldsByVolume[$volumeHandle] = $muxMateField;
 
         } catch (\Throwable $e) {
-            \Craft::error($e, __METHOD__);
+            Craft::error($e, __METHOD__);
             return null;
         }
 
-        return static::$_muxMateFieldsByVolume[$volumeHandle] ?? null;
+        return MuxMateHelper::$_muxMateFieldsByVolume[$volumeHandle] ?? null;
 
     }
 
@@ -271,7 +570,7 @@ class MuxMateHelper
 
         if ($assetVolumeConfig) {
             /** @var VolumeSettings $assetVolumeSettings */
-            $assetVolumeSettings = \Craft::createObject([
+            $assetVolumeSettings = Craft::createObject([
                 'class' => VolumeSettings::class,
                 ...$assetVolumeConfig,
             ]);
