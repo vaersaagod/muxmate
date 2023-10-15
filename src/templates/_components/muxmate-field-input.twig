@@ -23,16 +23,18 @@
 
     <div class="pane" data-mux-panel="{{ asset.id }}">
 
-        <div data-mux-fields>
-            {{ forms.copyTextField({
-                id: "mux-asset-id-#{asset.id}",
-                label: 'Mux Asset ID'|t('_muxmate'),
-                value: asset.muxAssetId,
-                class: ['code', not asset.muxAssetId ? 'disabled']|filter
-            }) }}
-        </div>
+        {% if asset.muxAssetId %}
+            <div data-mux-fields>
+                {{ forms.copyTextField({
+                    id: "mux-asset-id-#{asset.id}",
+                    label: 'Mux Asset ID'|t('_muxmate'),
+                    value: asset.muxAssetId,
+                    class: ['code', not asset.muxAssetId ? 'disabled']|filter
+                }) }}
+            </div>
 
-        <hr />
+            <hr />
+        {% endif %}
 
         <div data-mux-data="{{ asset.id }}">
 
