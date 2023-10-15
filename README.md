@@ -8,7 +8,7 @@ MuxMate integrates [Mux](https://www.mux.com/) with Craft CMS.
 
 ## Requirements
 
-This plugin requires Craft CMS 4.4.0 or later, and PHP 8.0.2 or later.
+This plugin requires Craft CMS 4.5.0 or later, and PHP 8.1 or later.
 
 ## Getting started  
 
