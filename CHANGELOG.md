@@ -3,12 +3,15 @@
 ## 2.0.0 - 2023-10-15
 ### Added
 - Added support for signing URLs  
-- Added support for Mux' `max_resolution` param for the `Asset::getMuxStreamUrl()` and `Asset::getMuxVideo()` methods
-- Added the `maxResolution` config setting for setting a default max resolution   
+- Added support for Mux' `max_resolution` param for the `Asset::getMuxStreamUrl()` and `Asset::getMuxVideo()` methods 
 - Added the `muxSigningKey` config setting for setting a signing key used in signing URLs
-- Added the `defaultPolicy` config setting for setting the default playback policy ("signed" or "public"; public is the default)  
+- Added the `defaultPolicy` config setting for setting the default playback policy ("signed" or "public"; public is the default)
+- Added the `defaultMaxResolution` config setting for setting a default max resolution
+- Added the `defaultMp4Quality` config setting for setting the default static rendition quality  
 - Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk 
 - Added the `_muxmate/create/playback-ids` command for creating new (or missing) Mux playback IDs for existing Mux assets in bulk
+- Added the `Asset::getMuxVideoDuration()` method  
+- Added the `Asset::getStaticRenditions()` method  
 - Added the ability to query for assets based on Mux meta data as JSON queries, e.g. `entry.videos.mux({ status: 'ready' }).all()`
 ### Changed
 - Removed the `muxPlaybackId` content table column 

@@ -20,15 +20,15 @@ class Settings extends Model
 
     public ?MuxSigningKey $muxSigningKey = null;
 
-    public string|bool|null $muxPlayerUrl = null;
-
-    public string|bool|null $muxVideoUrl = null;
-
     public string $defaultPolicy = MuxMateHelper::PLAYBACK_POLICY_PUBLIC;
 
     public string $defaultMp4Quality = MuxMateHelper::STATIC_RENDITION_QUALITY_HIGH;
 
-    public ?string $maxResolution = null;
+    public ?string $defaultMaxResolution = null;
+
+    public string|bool|null $muxPlayerUrl = null;
+
+    public string|bool|null $muxVideoUrl = null;
 
     public bool $lazyloadMuxVideo = false;
 

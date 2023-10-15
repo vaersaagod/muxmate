@@ -3,14 +3,9 @@
 namespace vaersaagod\muxmate\behaviors;
 
 use craft\elements\Asset;
-use craft\helpers\Template;
-use craft\web\View;
 
 use Twig\Markup;
 
-use vaersaagod\muxmate\MuxMate;
-use vaersaagod\muxmate\helpers\SignedUrlsHelper;
-use vaersaagod\muxmate\models\MuxPlaybackId;
 use vaersaagod\muxmate\helpers\MuxMateHelper;
 
 use yii\base\Behavior;
@@ -59,6 +54,7 @@ class MuxAssetBehavior extends Behavior
      * @param array|null $params Mux params – so far only `max_resolution` is supported
      * @param string|null $policy "signed" or "public"
      * @return string|Markup
+     * @throws \Exception
      */
     public function getMuxVideo(?array $options = null, ?array $params = null, ?string $policy = null): string|Markup
     {

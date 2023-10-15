@@ -277,7 +277,7 @@ final class MuxMateHelper
 
         // Get max resolution
         $maxResolutions = ['720p', '1080p', '1440p', '2160p'];
-        $maxResolution = $params['max_resolution'] ?? $settings->maxResolution;
+        $maxResolution = $params['max_resolution'] ?? $settings->defaultMaxResolution;
         if ($maxResolution && !in_array($maxResolution, $maxResolutions)) {
             throw new \Exception("Invalid max_resolution \"$maxResolution\". Needs to be one of " . implode(', ', $maxResolutions));
         }
@@ -326,7 +326,7 @@ final class MuxMateHelper
 
         // Get max resolution
         $maxResolutions = ['720p', '1080p', '1440p', '2160p'];
-        $maxResolution = $params['max_resolution'] ?? $settings->maxResolution;
+        $maxResolution = $params['max_resolution'] ?? $settings->defaultMaxResolution;
         if ($maxResolution && !in_array($maxResolution, $maxResolutions)) {
             throw new \Exception("Invalid max_resolution \"$maxResolution\". Needs to be one of " . implode(', ', $maxResolutions));
         }
