@@ -21,17 +21,9 @@ Register a Mux account on https://www.mux.com, and add an environment. _It's a g
 Create a Mux access token for the appropriate Mux environment. The token only needs the "Mux Video" permission.    
 Copy the access token ID and secret key.  
 
-### 3. Add the MuxMate webhook endpoint to the Mux environment
+### 3. Configure MuxMate
 
-In your Mux account, visit Settings -> Webhooks, select the appropriate environment, and create a new webhook with this URL:  
-
-`https://your-site.com/muxmate/webhook`  
-
-_If this is a local environment (or otherwise not accessible from outside), you can use Ngrok or similar to create a publicly available Webhook endpoint URL._
-
-### 4. Configure MuxMate  
-
-Create a file `config/_muxmate.php` in your repository, and add the Mux access token ID and secret key:  
+Create a file `config/_muxmate.php` in your repository, and add the Mux access token ID and secret key:
 
 ```php
 <?php
@@ -44,7 +36,17 @@ return [
 ];
 ```  
 
-...there are heaps more config settings (see [below](#configuration) for all of them), but those two are the only ones you'll *definitely* need.  
+...there are heaps more config settings (see [below](#configuration) for all of them), but those two are the only ones you'll *definitely* need.
+
+### 4. Add the MuxMate webhook endpoint to the Mux environment
+
+You're going to have a hard time without a working Mux webhook, so don't skip this step!  
+
+In your Mux account, visit Settings -> Webhooks, select the appropriate environment, and create a new webhook with this URL:  
+
+`https://your-site.com/muxmate/webhook`  
+
+_If this is a local environment (or otherwise not accessible from outside), you can use Ngrok or similar to create a publicly available Webhook endpoint URL._  
 
 ### 5. Create a MuxMate field and add it to a volume
 
