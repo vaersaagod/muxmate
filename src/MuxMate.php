@@ -75,7 +75,7 @@ class MuxMate extends Plugin
         ]);
 
         // Defer most setup tasks until Craft is fully initialized
-        Craft::$app->onInit(function() {
+        Craft::$app->onInit(function () {
             $this->attachEventHandlers();
             // ...
         });
@@ -97,7 +97,7 @@ class MuxMate extends Plugin
     {
 
         // Register custom MuxMate field type
-        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function(RegisterComponentTypesEvent $event) {
+        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = MuxMateField::class;
         });
 
@@ -105,7 +105,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Model::EVENT_DEFINE_BEHAVIORS,
-            static function(DefineBehaviorsEvent $event) {
+            static function (DefineBehaviorsEvent $event) {
                 $event->behaviors['muxAssetBehavior'] = [
                     'class' => MuxAssetBehavior::class,
                 ];
@@ -116,7 +116,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Element::EVENT_AFTER_PROPAGATE,
-            static function(ModelEvent $event) {
+            static function (ModelEvent $event) {
                 /** @var Asset $asset */
                 $asset = $event->sender;
                 if (
@@ -134,7 +134,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_BEFORE_REPLACE_ASSET,
-            static function(ReplaceAssetEvent $event) {
+            static function (ReplaceAssetEvent $event) {
                 $asset = $event->asset;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
                     return;
@@ -147,7 +147,7 @@ class MuxMate extends Plugin
         Event::on(
             Asset::class,
             Element::EVENT_AFTER_DELETE,
-            static function(Event $event) {
+            static function (Event $event) {
                 /** Asset $asset */
                 $asset = $event->sender;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
@@ -161,7 +161,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_DEFINE_THUMB_URL,
-            function(DefineAssetThumbUrlEvent $event) {
+            function (DefineAssetThumbUrlEvent $event) {
                 $asset = $event->asset;
                 if (
                     $asset->kind !== Asset::KIND_VIDEO ||
@@ -182,7 +182,7 @@ class MuxMate extends Plugin
         Event::on(
             Cp::class,
             Cp::EVENT_DEFINE_ELEMENT_INNER_HTML,
-            static function(DefineElementInnerHtmlEvent $event) {
+            static function (DefineElementInnerHtmlEvent $event) {
                 $element = $event->element;
                 if (
                     !$element instanceof Asset ||
@@ -218,7 +218,7 @@ class MuxMate extends Plugin
         Event::on(
             Assets::class,
             Assets::EVENT_REGISTER_PREVIEW_HANDLER,
-            static function(AssetPreviewEvent $event) {
+            static function (AssetPreviewEvent $event) {
                 $asset = $event->asset;
                 if ($asset->kind !== Asset::KIND_VIDEO) {
                     return;
@@ -232,11 +232,11 @@ class MuxMate extends Plugin
         Event::on(
             FieldLayout::class,
             Model::EVENT_DEFINE_RULES,
-            static function(DefineRulesEvent $event) {
+            static function (DefineRulesEvent $event) {
                 /** @var FieldLayout $fieldLayout */
                 $fieldLayout = $event->sender;
                 $event->rules[] = [
-                    'customFields', static function() use ($fieldLayout) {
+                    'customFields', static function () use ($fieldLayout) {
                         $customFields = $fieldLayout->getCustomFields();
                         $hasMuxMateField = false;
                         foreach ($customFields as $customField) {
@@ -260,7 +260,7 @@ class MuxMate extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            static function(RegisterUrlRulesEvent $event) {
+            static function (RegisterUrlRulesEvent $event) {
                 $event->rules['muxmate/webhook'] = '_muxmate/webhook';
             }
         );
@@ -273,7 +273,7 @@ class MuxMate extends Plugin
             Event::on(
                 Response::class,
                 BaseResponse::EVENT_AFTER_PREPARE,
-                static function(Event $event) use ($scriptSrcNonce) {
+                static function (Event $event) use ($scriptSrcNonce) {
                     /** @var Response|null $response */
                     $response = $event->sender;
                     $content = $response?->content;
@@ -293,7 +293,7 @@ class MuxMate extends Plugin
             Event::on(
                 Response::class,
                 BaseResponse::EVENT_AFTER_PREPARE,
-                static function(Event $event) {
+                static function (Event $event) {
                     /** @var Response|null $response */
                     $response = $event->sender;
                     $content = $response?->content;
@@ -312,7 +312,7 @@ class MuxMate extends Plugin
                             $decodedPlaceholderToken = SignedUrlsHelper::decodePlaceholderToken($placeholderToken);
                             if (!empty($decodedPlaceholderToken) && is_array($decodedPlaceholderToken)) {
                                 ['playbackId' => $playbackId, 'aud' => $aud, 'claims' => $claims, 'expirationInSeconds' => $expirationInSeconds] = $decodedPlaceholderToken;
-                                $token = SignedUrlsHelper::getToken($playbackId, $aud, $claims, $expirationInSeconds, false);
+                                $token = SignedUrlsHelper::getToken($playbackId, $aud, (array)$claims, $expirationInSeconds, false);
                             }
                         } catch (\Throwable $e) {
                             Craft::error($e, __METHOD__);

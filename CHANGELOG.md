@@ -3,7 +3,8 @@
 ## Unreleased
 ### Added
 - Added support for signing URLs  
-- Added support for Mux' `max_resolution` param  
+- Added support for Mux' `max_resolution` param for the `Asset::getMuxStreamUrl()` and `Asset::getMuxVideo()` methods
+- Added the `maxResolution` config setting  
 - Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk 
 - Added the `_muxmate/create/playback-ids` command for creating new (or missing) Mux playback IDs for existing Mux assets in bulk  
 ### Changed

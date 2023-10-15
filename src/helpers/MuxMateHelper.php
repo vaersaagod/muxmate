@@ -9,12 +9,15 @@ use craft\elements\Asset;
 use craft\helpers\App;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
+use craft\helpers\Template;
 use craft\helpers\UrlHelper;
 
+use craft\web\View;
 use Illuminate\Support\Collection;
 
 use MuxPhp\Models\PlaybackID;
 
+use Twig\Markup;
 use vaersaagod\muxmate\fields\MuxMateField;
 use vaersaagod\muxmate\models\MuxMateFieldAttributes;
 use vaersaagod\muxmate\models\MuxPlaybackId;
@@ -22,6 +25,7 @@ use vaersaagod\muxmate\models\VolumeSettings;
 use vaersaagod\muxmate\MuxMate;
 
 use yii\base\InvalidConfigException;
+use function Symfony\Component\String\u;
 
 final class MuxMateHelper
 {
@@ -248,11 +252,12 @@ final class MuxMateHelper
 
     /**
      * @param Asset|null $asset
+     * @param array|null $params
      * @param string|null $policy
      * @return string|null
      * @throws InvalidConfigException
      */
-    public static function getMuxStreamUrl(?Asset $asset, ?string $policy = null): ?string
+    public static function getMuxStreamUrl(?Asset $asset, ?array $params = null, ?string $policy = null): ?string
     {
 
         if (
@@ -271,18 +276,99 @@ final class MuxMateHelper
             return null;
         }
 
+        $settings = MuxMate::getInstance()->getSettings();
+
+        // Get max resolution
+        $maxResolutions = ['720p', '1080p', '1440p', '2160p'];
+        $maxResolution = $params['max_resolution'] ?? $settings->maxResolution;
+        if ($maxResolution && !in_array($maxResolution, $maxResolutions)) {
+            throw new \Exception("Invalid max_resolution \"$maxResolution\". Needs to be one of " . implode(', ', $maxResolutions));
+        }
+
+        // Normalize params
         $params = [];
+        if ($maxResolution) {
+            $params['max_resolution'] = $maxResolution;
+        }
 
         // If the policy is signed; create a JWT signing token
         if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
-            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, MuxMateHelper::getMuxVideoDuration($asset))) {
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, $params, MuxMateHelper::getMuxVideoDuration($asset))) {
                 return null;
             }
-            $params['token'] = $token;
+            $params = ['token' => $token];
+        }
+
+        if (empty(array_values($params))) {
+            $params = null;
         }
 
         return UrlHelper::url(MuxMateHelper::MUX_STREAMING_DOMAIN . "/$playbackId.m3u8", $params);
 
+    }
+
+    public static function getMuxVideoTag(?Asset $asset, ?array $options = null, ?array $params = null, ?string $policy = null): ?Markup
+    {
+
+        if (
+            !$asset instanceof Asset ||
+            MuxMateHelper::getMuxStatus($asset) !== 'ready') {
+            return null;
+        }
+
+        $playbackId = MuxMateHelper::getMuxPlaybackId($asset, $policy);
+        if (!$playbackId instanceof MuxPlaybackId) {
+            return null;
+        }
+
+        $settings = MuxMate::getInstance()->getSettings();
+
+        // Get options
+        $inline = $options['inline'] ?? null;
+        $lazyload = $options['lazyload'] ?? $settings->lazyloadMuxVideo;
+
+        // Get max resolution
+        $maxResolutions = ['720p', '1080p', '1440p', '2160p'];
+        $maxResolution = $params['max_resolution'] ?? $settings->maxResolution;
+        if ($maxResolution && !in_array($maxResolution, $maxResolutions)) {
+            throw new \Exception("Invalid max_resolution \"$maxResolution\". Needs to be one of " . implode(', ', $maxResolutions));
+        }
+
+        if ($playbackId->policy === MuxMateHelper::PLAYBACK_POLICY_SIGNED) {
+            if (!empty($maxResolution)) {
+                $claims = [
+                    'max_resolution' => $params['max_resolution'],
+                ];
+            } else {
+                $claims = null;
+            }
+            if (!$token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, $claims, MuxMateHelper::getMuxVideoDuration($asset))) {
+                return null;
+            }
+            $maxResolution = null;
+        } else {
+            $token = null;
+        }
+
+        $nonce = $settings->scriptSrcNonce;
+        $muxVideoUrl = $settings->muxVideoUrl;
+
+        try {
+            $html = Template::raw(\Craft::$app->getView()->renderTemplate('_muxmate/_mux-video.twig', [
+                'video' => $asset,
+                'playbackId' => $playbackId,
+                'token' => $token,
+                'muxVideoUrl' => $muxVideoUrl,
+                'nonce' => $nonce,
+                'inline' => $inline,
+                'lazyload' => $lazyload,
+                'maxResolution' => $maxResolution,
+            ], View::TEMPLATE_MODE_CP));
+        } catch (\Throwable $e) {
+            \Craft::error($e, __METHOD__);
+            return null;
+        }
+        return $html;
     }
 
     /**

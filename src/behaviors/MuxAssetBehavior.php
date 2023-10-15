@@ -44,54 +44,25 @@ class MuxAssetBehavior extends Behavior
     }
 
     /**
-     * @param string|null $policy
+     * @param array|null $params Mux params – so far only `max_resolution` is supported
+     * @param string|null $policy "signed" or "public"
      * @return string|null
      * @throws \yii\base\InvalidConfigException
      */
-    public function getMuxStreamUrl(?string $policy = null): ?string
+    public function getMuxStreamUrl(?array $params = null, ?string $policy = null): ?string
     {
-        return MuxMateHelper::getMuxStreamUrl($this->owner, $policy);
+        return MuxMateHelper::getMuxStreamUrl($this->owner, $params, $policy);
     }
 
     /**
-     * @param array|null $params
-     * @param string|null $policy
+     * @param array|null $options "inline", "lazyload"
+     * @param array|null $params Mux params – so far only `max_resolution` is supported
+     * @param string|null $policy "signed" or "public"
      * @return string|Markup
-     * @throws \yii\base\InvalidConfigException
      */
-    public function getMuxVideo(?array $params = null, ?string $policy = null): string|Markup
+    public function getMuxVideo(?array $options = null, ?array $params = null, ?string $policy = null): string|Markup
     {
-        if (!$this->owner instanceof Asset) {
-            return '';
-        }
-        $settings = MuxMate::getInstance()->getSettings();
-        $policy = $policy ?? $settings->defaultPolicy;
-        /** @var MuxPlaybackId|null $playbackId */
-        $playbackId = $this->getMuxPlaybackId($policy);
-        if (empty($playbackId)) {
-            return '';
-        }
-        $token = SignedUrlsHelper::getToken($playbackId, SignedUrlsHelper::SIGNED_URL_AUDIENCE_VIDEO, null, $this->getMuxVideoDuration());
-        try {
-            $muxVideoUrl = $settings->muxVideoUrl;
-            $inline = $params['inline'] ?? null;
-            $lazyload = $params['lazyload'] ?? $settings->lazyloadMuxVideo;
-            $nonce = $settings->scriptSrcNonce;
-            $html = Template::raw(\Craft::$app->getView()->renderTemplate('_muxmate/_mux-video.twig', [
-                'video' => $this->owner,
-                'playbackId' => $playbackId,
-                'token' => $token,
-                'muxVideoUrl' => $muxVideoUrl,
-                'inline' => $inline,
-                'lazyload' => $lazyload,
-                'nonce' => $nonce,
-                'policy' => $policy,
-            ], View::TEMPLATE_MODE_CP));
-        } catch (\Throwable $e) {
-            \Craft::error($e, __METHOD__);
-            return '';
-        }
-        return $html;
+        return MuxMateHelper::getMuxVideoTag($this->owner, $options, $params, $policy) ?? '';
     }
 
     /**

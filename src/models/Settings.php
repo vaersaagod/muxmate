@@ -5,6 +5,7 @@ namespace vaersaagod\muxmate\models;
 use craft\base\Model;
 use craft\helpers\App;
 
+use vaersaagod\muxmate\helpers\MuxMateHelper;
 use vaersaagod\muxmate\MuxMate;
 
 /**
@@ -23,9 +24,11 @@ class Settings extends Model
 
     public string|bool|null $muxVideoUrl = null;
 
-    public string $defaultPolicy = 'public';
+    public string $defaultPolicy = MuxMateHelper::PLAYBACK_POLICY_PUBLIC;
 
-    public string $defaultMp4Quality = 'high';
+    public string $defaultMp4Quality = MuxMateHelper::STATIC_RENDITION_QUALITY_HIGH;
+
+    public ?string $maxResolution = null;
 
     public bool $lazyloadMuxVideo = false;
 

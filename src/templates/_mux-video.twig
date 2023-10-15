@@ -1,15 +1,20 @@
 {% set playbackId = playbackId ?? null %}
 {% set token = token ?? null %}
+{% set inline = inline ?? false %}
+{% set lazyload = lazyload ?? false %}
+{% set nonce = nonce ?? null %}
+{% set maxResolution = maxResolution ?? false %}
 
 {% if playbackId %}
 
     {% set attributes = {
         'playback-id': playbackId ~ (token ? "?token=#{token}"),
         'metadata-video-title': video.title,
-        'metadata-video-id': video.uid
+        'metadata-video-id': video.uid,
+        'max-resolution': maxResolution
     } %}
 
-    {% if inline ?? false %}
+    {% if inline %}
         {% set attributes = attributes|merge({
             autoplay: 'muted',
             loop: true,
@@ -30,8 +35,7 @@
     {% set muxVideoUrl = muxVideoUrl ?? null %}
 
     {% if muxVideoUrl %}
-        {% set lazyload = lazyload ?? false %}
-        {% if nonce ?? null %}
+        {% if nonce %}
             {% set nonce = '%%%MUXMATE_NONCE_PLACEHOLDER%%%' %}
         {% endif %}
         {% if lazyload %}
