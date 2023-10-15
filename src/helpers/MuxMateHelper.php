@@ -11,11 +11,9 @@ use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
-
 use craft\web\View;
-use Illuminate\Support\Collection;
 
-use MuxPhp\Models\PlaybackID;
+use Illuminate\Support\Collection;
 
 use Twig\Markup;
 use vaersaagod\muxmate\fields\MuxMateField;
@@ -25,7 +23,6 @@ use vaersaagod\muxmate\models\VolumeSettings;
 use vaersaagod\muxmate\MuxMate;
 
 use yii\base\InvalidConfigException;
-use function Symfony\Component\String\u;
 
 final class MuxMateHelper
 {

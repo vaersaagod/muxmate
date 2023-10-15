@@ -170,10 +170,12 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         /** @var ElementQuery $query */
         $column = ElementHelper::fieldColumnFromField($this);
         $metaDataColumn = StringHelper::replace($column, $this->handle, "{$this->handle}_muxMetaData");
-        if (is_array($value) && (isset($value['muxAssetId']))) {
-            $query->subQuery->andWhere(Db::parseParam("content.$column", $value['muxAssetId']));
-            if (isset($value['muxMetaData'])) {
-                $query->subQuery->andWhere(Db::parseParam("content.$metaDataColumn", $value['muxMetaData']));
+        if (is_array($value)) {
+            $keys = array_keys($value);
+            foreach ($keys as $key) {
+                $query
+                    ->subQuery
+                    ->andWhere(Db::parseParam("JSON_EXTRACT(content.$metaDataColumn, '$.$key')", $value[$key]));
             }
         } else {
             $query
