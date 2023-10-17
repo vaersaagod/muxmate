@@ -7,7 +7,8 @@
 - Added the `muxSigningKey` config setting for setting a signing key used in signing URLs
 - Added the `defaultPolicy` config setting for setting the default playback policy ("signed" or "public"; public is the default)
 - Added the `defaultMaxResolution` config setting for setting a default max resolution
-- Added the `defaultMp4Quality` config setting for setting the default static rendition quality  
+- Added the `defaultMp4Quality` config setting for setting the default static rendition quality
+- Added the `maxResolutionTier` config setting for setting the `max_resolution_tier` param when creating new Mux assets  
 - Added the `_muxmate/create` command for creating Mux assets from existing Craft assets in bulk 
 - Added the `_muxmate/create/playback-ids` command for creating new (or missing) Mux playback IDs for existing Mux assets in bulk
 - Added the `Asset::getMuxVideoDuration()` method  

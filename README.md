@@ -443,7 +443,12 @@ The default quality to use for static renditions. Needs to be one of `'high'` (d
 #### `defaultMaxResolution` [string|null]  
 Default `null`  
 
-The default [`max_resolution`](https://docs.mux.com/guides/video/control-playback-resolution#specify-maximum-resolution) param to use for HLS streams. Needs to be one of `'720p'`, `'1080p'`, `'1440p'`, or `'2160p'`.      
+The default [`max_resolution`](https://docs.mux.com/guides/video/control-playback-resolution#specify-maximum-resolution) param to use for HLS streams. Needs to be one of `'720p'`, `'1080p'`, `'1440p'` or `'2160p'`.      
+
+#### `maxResolutionTier` [string|null]  
+Default `null` (defaults to `'1080p'`)  
+
+The default `max_resolution_tier` param to use when creating new Mux assets. Needs to be one of `'1080p'`, `'1440p'` or `'2160p'`.  
 
 #### `muxVideoUrl` [string|bool|null]
 Default: `'https://cdn.jsdelivr.net/npm/@mux/mux-video@0'`  

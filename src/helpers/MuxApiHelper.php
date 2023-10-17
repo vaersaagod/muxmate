@@ -30,8 +30,15 @@ final class MuxApiHelper
 
         $input = new InputSettings(['url' => $inputUrl]);
 
+        $maxResolutionTier = MuxMate::getInstance()->getSettings()->maxResolutionTier ?? '1080p';
+        $maxResolutionTiers = ['1080p', '1440p', '2160p'];
+        if (!in_array($maxResolutionTier, $maxResolutionTiers, true)) {
+            throw new \Exception("Invalid max resolution tier \"$maxResolutionTier\". Needs to be one of " . implode(', ', $maxResolutionTiers));
+        }
+
         $createAssetRequest = new CreateAssetRequest([
             'input' => $input,
+            'max_resolution_tier' => $maxResolutionTier,
             'mp4_support' => 'standard',
             'playback_policy' => [PlaybackPolicy::_PUBLIC, PlaybackPolicy::SIGNED],
         ]);

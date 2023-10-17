@@ -26,6 +26,8 @@ class Settings extends Model
 
     public ?string $defaultMaxResolution = null;
 
+    public ?string $maxResolutionTier = null;
+
     public string|bool|null $muxPlayerUrl = null;
 
     public string|bool|null $muxVideoUrl = null;
@@ -57,6 +59,9 @@ class Settings extends Model
         }
         if (array_key_exists('defaultMp4Quality', $values) && empty($values['defaultMp4Quality'])) {
             unset($values['defaultMp4Quality']);
+        }
+        if (array_key_exists('maxResolutionTier', $values) && empty($values['maxResolutionTier'])) {
+            unset($values['maxResolutionTier']);
         }
         parent::setAttributes($values, $safeOnly);
     }

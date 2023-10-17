@@ -492,7 +492,10 @@ final class MuxMateHelper
     public static function saveMuxAttributesToAsset(Asset $asset, array $attributes): bool
     {
 
+        Craft::info("Save Mux attributes for Asset \"$asset->id\"...", __METHOD__);
+
         if (!MuxMateHelper::_setMuxMateFieldAttributes($asset, $attributes)) {
+            Craft::info("Unable to set Mux attributes for Asset \"$asset->id\"...", __METHOD__);
             return false;
         }
 
@@ -510,6 +513,8 @@ final class MuxMateHelper
             Craft::error("Unable to save Mux attributes to asset: " . Json::encode($asset->getErrors()), __METHOD__);
             return false;
         }
+
+        Craft::info("Successfully set Mux attributes for Asset \"$asset->id\"!", __METHOD__);
 
         return true;
     }
