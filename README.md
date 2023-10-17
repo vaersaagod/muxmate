@@ -139,11 +139,11 @@ MuxMate does not create or update Mux assets when Craft assets are re-saved prog
 Unlike resaving the asset manually, this will not update the asset's `dateUpdated` attribute, to the extent that matters.
 
 ### Use the `_muxmate/create` CLI command  
-The `_muxmate/create` CLI command can be used to create Mux assets, both in bulk (i.e. for an entire volume) or for a single asset:   
+The `_muxmate/create` CLI command can be used to create Mux assets, both in bulk (i.e. for an entire volume) or for a single asset:     
 
 `_muxmate/create` - Create Mux assets for all video assets. Pass `--update=1` to also re-create any existing Mux assets.  
-`_muxmate/create --volume=videos` - Create Mux assets for all video assets in a volume `videos`. Pass `--update=1` Pass `--update=1` to also re-create any existing Mux assets.  
-`_muxmate/create --assetId=1234` - Create a Mux asset for a video asset with the ID `1234`. Pass `--update=1` Pass `--update=1` to also re-create an existing Mux asset.  
+`_muxmate/create --volume=videos` - Create Mux assets for all video assets in a volume `videos`. Pass `--update=1` Pass `--update=1` to also re-create any existing Mux assets.    
+`_muxmate/create --assetId=1234` - Create a Mux asset for a video asset with the ID `1234`. Pass `--update=1` Pass `--update=1` to also re-create an existing Mux asset.   
 
 ## Rendering and playing videos
 
@@ -471,10 +471,10 @@ Per-volume config settings. Currently only supports a `baseUrl` setting, see "Ov
 MuxMate adds some methods and attributes to asset models:
 
 ### `isMuxVideo()` [bool]  
-Returns `true` if the asset has a Mux playback ID.  
+Returns `true` if the asset has a Mux asset ID.  
 
 ### `isMuxVideoReady()` [bool]  
-Returns `true` if the asset has a Mux playback ID and a "ready" status, i.e. is ready to play.  
+Returns `true` if the asset has a Mux asset ID and a "ready" status, i.e. is ready to play.  
 
 ### `getMuxVideo(array|null options = null, array|null params = null, string|null policy = null)` [Markup|string]  
 `@options` Array of options; `inline`, `lazyload`    
