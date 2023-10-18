@@ -1,6 +1,6 @@
 # MuxMate Changelog
 
-## 2.0.0 - 2023-10-15
+## 2.0.0 - 2023-10-18
 ### Added
 - Added support for signing URLs  
 - Added support for Mux' `max_resolution` param for the `Asset::getMuxStreamUrl()` and `Asset::getMuxVideo()` methods 
