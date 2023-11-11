@@ -70,8 +70,8 @@ final class SignedUrlsHelper
             $expirationInSeconds = $minExpirationTime;
         }
 
-        $returnPlaceholder = $returnPlaceholder !== false && Craft::$app->getRequest()->getIsSiteRequest() && Craft::$app->getConfig()->getGeneral()->enableTemplateCaching;
-        if ($returnPlaceholder) {
+        // Maybe return a placeholder token
+        if ($returnPlaceholder !== false && Craft::$app->getRequest()->getIsSiteRequest() && Craft::$app->getConfig()->getGeneral()->enableTemplateCaching) {
             return SignedUrlsHelper::_getPlaceholderToken([
                 'playbackId' => $playbackId,
                 'aud' => $aud,
@@ -105,33 +105,39 @@ final class SignedUrlsHelper
     }
 
     /**
-     * @param string $token
+     * @param string $token A hashed JWT representing a placeholder token
      * @return array|null
      */
     public static function decodePlaceholderToken(string $token): ?array
     {
-        $signingKey = SignedUrlsHelper::getSigningKey();
-        if (!$signingKey) {
+        if (!$signingKey = SignedUrlsHelper::getSigningKey()) {
             return null;
         }
-        return (array)JWT::decode($token, new Key($signingKey->id, 'HS256'));
+        try {
+            $token = Craft::$app->getSecurity()->validateData($token);
+            return (array)JWT::decode($token, new Key($signingKey->id, 'HS256'));
+        } catch (\Throwable $e) {
+            Craft::error($e, __METHOD__);
+        }
+        return null;
     }
 
     /**
-     * @param array $claims
+     * @param array $payload
      * @return string|null
      */
-    private static function _getPlaceholderToken(array $claims = []): ?string
+    private static function _getPlaceholderToken(array $payload = []): ?string
     {
-        $signingKey = SignedUrlsHelper::getSigningKey();
-        if (!$signingKey) {
+        if (!$signingKey = SignedUrlsHelper::getSigningKey()) {
             return null;
         }
-        $placeholderToken = JWT::encode([
-            ...$claims,
-            'exp' => time() + 120,
-        ], $signingKey->id, 'HS256');
-        return "MUX_TOKEN_PLACEHOLDER{$placeholderToken}MUX_TOKEN_PLACEHOLDER";
+        try {
+            $placeholderToken = Craft::$app->getSecurity()->hashData(JWT::encode($payload, $signingKey->id, 'HS256'));
+            return "MUX_TOKEN_PLACEHOLDER{$placeholderToken}MUX_TOKEN_PLACEHOLDER";
+        } catch (\Throwable $e) {
+            Craft::error($e, __METHOD__);
+            return null;
+        }
     }
 
 }

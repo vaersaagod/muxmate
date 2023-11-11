@@ -1,5 +1,9 @@
 # MuxMate Changelog
 
+## 2.0.1 - 2023-11-11
+### Fixed
+- Fixed an issue where signed URL placeholder tokens would expire when used in combination with template caching  
+
 ## 2.0.0 - 2023-10-18
 ### Added
 - Added support for signing URLs  
