@@ -32,7 +32,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         return Craft::t('_muxmate', 'MuxMate');
     }
 
-    public static function valueType(): string
+    public static function phpType(): string
     {
         return 'mixed';
     }
@@ -42,7 +42,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
      * @param ElementInterface $element
      * @return string
      */
-    public function getTableAttributeHtml(mixed $value, ElementInterface $element): string
+    public function getPreviewHtml(mixed $value, ElementInterface $element): string
     {
         if (!$element instanceof Asset || $element->kind !== Asset::KIND_VIDEO) {
             return '';
@@ -108,7 +108,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
     /**
      * @throws InvalidConfigException
      */
-    public function normalizeValue(mixed $value, ElementInterface $element = null): mixed
+    public function normalizeValue(mixed $value, ?\craft\base\ElementInterface $element = null): mixed
     {
         if ($value instanceof MuxMateFieldAttributes) {
             return $value;
@@ -119,7 +119,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         ]);
     }
 
-    protected function inputHtml(mixed $value, ElementInterface $element = null): string
+    protected function inputHtml(mixed $value, ElementInterface $element = null, bool $inline = false): string
     {
         if (!$element instanceof Asset || $element->kind !== Asset::KIND_VIDEO) {
             $warningTip = new Tip([

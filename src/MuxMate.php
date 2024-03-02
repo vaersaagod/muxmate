@@ -280,7 +280,7 @@ class MuxMate extends Plugin
                     if (empty($content)) {
                         return;
                     }
-                    $response->content = StringHelper::replace($content, 'nonce="%%%MUXMATE_NONCE_PLACEHOLDER%%%"', 'nonce="' . $scriptSrcNonce . '"');
+                    $response->contentHtml = StringHelper::replace($content, 'nonce="%%%MUXMATE_NONCE_PLACEHOLDER%%%"', 'nonce="' . $scriptSrcNonce . '"');
                 }
             );
         }
@@ -319,7 +319,7 @@ class MuxMate extends Plugin
                         }
                         $content = str_replace($match, $token, $content);
                     }
-                    $response->content = $content;
+                    $response->contentHtml = $content;
                 }
             );
         }
