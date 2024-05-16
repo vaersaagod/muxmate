@@ -127,7 +127,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
             // Use the `resolve` method to convert the field value into a format that can be used by the oEmbed services embed method
             'resolve' => function ($source, $arguments) use ($handle) {
                 $mux =  MuxMateHelper::getMuxStreamUrl($source);
-                return $mux;
+                return "MuxMate field";
             }
         ];
     }
