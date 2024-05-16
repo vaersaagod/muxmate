@@ -19,8 +19,7 @@ class MuxMateFieldTypeGenerator implements GeneratorInterface
         $typeName = self::getName($context);
 
         $properties = [
-            'muxAssetId' => Type::string(),
-            'muxMetaData' => Type::array(),
+            'muxAssetId' => Type::string()
         ];
 
         $property = GqlEntityRegistry::getEntity($typeName)
