@@ -115,20 +115,10 @@ class MuxMateField extends Field implements PreviewableFieldInterface
     public function getContentGqlType(): \GraphQL\Type\Definition\Type|array
     {
         $typeArray = MuxMateFieldTypeGenerator::generateTypes($this);
-
-        $handle = $this->handle;
-
         return [
-            'name' => $handle,
+            'name' => $this->handle,
             'description' => "MuxMate field",
             'type' => array_shift($typeArray),
-            // The `args` array specifies the GraphQL arguments that the `embed` function accepts so we can apply options for the oEmbed service
-            'args' => [],
-            // Use the `resolve` method to convert the field value into a format that can be used by the oEmbed services embed method
-            // 'resolve' => function ($source, $arguments) use ($handle) {
-            //     $mux =  MuxMateHelper::getMuxStreamUrl($source);
-            //     return $mux;
-            // }
         ];
     }
 

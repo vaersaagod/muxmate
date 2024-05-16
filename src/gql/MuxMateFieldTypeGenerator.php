@@ -19,7 +19,35 @@ class MuxMateFieldTypeGenerator implements GeneratorInterface
         $typeName = self::getName($context);
 
         $properties = [
-            'muxAssetId' => Type::string()
+            "id" => Type::string(),
+            "created_at" => Type::string(),
+            "status" => Type::string(),
+            "duration" => Type::float(),
+            "max_stored_resolution" => Type::string(),
+            "resolution_tier" => Type::string(),
+            "max_resolution_tier" => Type::string(),
+            "encoding_tier" => Type::string(),
+            "max_stored_frame_rate" => Type::int(),
+            "aspect_ratio" => Type::string(),
+            "playback_id" => [
+                'name' => 'playback_id',
+                'description' => 'Returns a Mux playback ID for the given policy.',
+                'args' => [
+                    'policy' => [
+                        'name' => 'policy',
+                        'type' => Type::string(),
+                        'description' => 'Given policy to return',
+                        'default' => 'public'
+                    ],
+                ],
+                'type' => Type::string(),
+            ],
+            "master_access" => Type::string(),
+            "mp4_support" => Type::string(),
+            "normalize_audio" => Type::boolean(),
+            "test" => Type::boolean(),
+            "ingest_type" => Type::string(),
+            "error" => Type::string(),
         ];
 
         $property = GqlEntityRegistry::getEntity($typeName)
