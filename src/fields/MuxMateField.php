@@ -17,11 +17,11 @@ use craft\helpers\StringHelper;
 use craft\web\View;
 use GraphQL\Type\Definition\Type;
 
-use vaersaagod\muxmate\gql\MuxMateFieldTypeGenerator;
 
 
 use vaersaagod\muxmate\helpers\MuxMateHelper;
 use vaersaagod\muxmate\models\MuxMateFieldAttributes;
+use vaersaagod\muxmate\gql\MuxMateFieldTypeGenerator;
 use yii\base\InvalidConfigException;
 use yii\db\Schema;
 

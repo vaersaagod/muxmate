@@ -8,7 +8,7 @@ use craft\gql\TypeLoader;
 use GraphQL\Type\Definition\Type;
 use vaersaagod\muxmate\fields\MuxMateField;
 
-class OembedFieldTypeGenerator implements GeneratorInterface
+class MuxMateFieldTypeGenerator implements GeneratorInterface
 {
     /**
      * @inheritdoc
