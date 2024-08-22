@@ -1,4 +1,4 @@
-# MuxMate 2.x  
+# MuxMate 3.x  
 
 Mux ado about streaming, mate!
 
@@ -10,7 +10,7 @@ MuxMate integrates [Mux](https://www.mux.com/) with Craft CMS.
 
 ## Requirements
 
-This plugin requires Craft CMS 4.5.0 or later, and PHP 8.1 or later.
+This plugin requires Craft CMS 5.2.0 or later, and PHP 8.2 or later.
 
 ## Disclaimer
 

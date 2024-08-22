@@ -42,7 +42,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
      * @param ElementInterface $element
      * @return string
      */
-    public function getTableAttributeHtml(mixed $value, ElementInterface $element): string
+    public function getPreviewHtml(mixed $value, ElementInterface $element): string
     {
         if (!$element instanceof Asset || $element->kind !== Asset::KIND_VIDEO) {
             return '';
@@ -92,7 +92,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
     /**
      * @inheritdoc
      */
-    public function getContentColumnType(): array|string
+    public static function dbType(): array|string
     {
         return [
             'muxAssetId' => Schema::TYPE_STRING,
@@ -119,7 +119,7 @@ class MuxMateField extends Field implements PreviewableFieldInterface
         ]);
     }
 
-    protected function inputHtml(mixed $value, ElementInterface $element = null): string
+    protected function inputHtml(mixed $value, ElementInterface $element = null, bool $inline): string
     {
         if (!$element instanceof Asset || $element->kind !== Asset::KIND_VIDEO) {
             $warningTip = new Tip([
