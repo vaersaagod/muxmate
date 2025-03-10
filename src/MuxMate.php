@@ -16,7 +16,6 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\ReplaceAssetEvent;
 use craft\helpers\Cp;
-use craft\helpers\StringHelper;
 use craft\log\MonologTarget;
 use craft\models\FieldLayout;
 use craft\services\Assets;
@@ -73,6 +72,30 @@ class MuxMate extends Plugin
                 dateFormat: 'Y-m-d H:i:s',
             ),
         ]);
+
+        // Replace nonce placeholders
+        if (
+            Craft::$app->getRequest()->getIsSiteRequest() &&
+            $this->getSettings()->scriptSrcNonce
+        ) {
+            Event::on(
+                Response::class,
+                BaseResponse::EVENT_AFTER_PREPARE,
+                static function (Event $event) {
+                    /** @var Response|null $response */
+                    $response = $event->sender;
+                    $content = $response?->content;
+                    if (empty($content)) {
+                        return;
+                    }
+                    $scriptSrcNonce = MuxMate::getInstance()->getSettings()->scriptSrcNonce;
+                    if (str_contains($scriptSrcNonce, '{')) {
+                        $scriptSrcNonce = Craft::$app->getView()->renderString($scriptSrcNonce);
+                    }
+                    $response->content = str_replace('%%%MUXMATE_NONCE_PLACEHOLDER%%%', $scriptSrcNonce, $content);
+                }
+            );
+        }
 
         // Defer most setup tasks until Craft is fully initialized
         Craft::$app->onInit(function () {
@@ -264,26 +287,6 @@ class MuxMate extends Plugin
                 $event->rules['muxmate/webhook'] = '_muxmate/webhook';
             }
         );
-
-        // Replace nonce placeholders
-        if (
-            Craft::$app->getRequest()->getIsSiteRequest() &&
-            $scriptSrcNonce = $this->getSettings()->scriptSrcNonce
-        ) {
-            Event::on(
-                Response::class,
-                BaseResponse::EVENT_AFTER_PREPARE,
-                static function (Event $event) use ($scriptSrcNonce) {
-                    /** @var Response|null $response */
-                    $response = $event->sender;
-                    $content = $response?->content;
-                    if (empty($content)) {
-                        return;
-                    }
-                    $response->content = StringHelper::replace($content, 'nonce="%%%MUXMATE_NONCE_PLACEHOLDER%%%"', 'nonce="' . $scriptSrcNonce . '"');
-                }
-            );
-        }
 
         // Replace signed URL token placeholders
         if (
