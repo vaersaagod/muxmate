@@ -2,11 +2,11 @@
     "name": "vaersaagod/muxmate",
     "description": "Mux ado about streaming, mate!",
     "type": "craft-plugin",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "require": {
         "php": ">=8.2",
         "craftcms/cms": "^5.2.0",
-        "firebase/php-jwt": "^6.9",
+        "firebase/php-jwt": "^7.0",
         "muxinc/mux-php": "^3.0"
     },
     "require-dev": {
