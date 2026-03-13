@@ -2,51 +2,62 @@
     "name": "vaersaagod/muxmate",
     "description": "Mux ado about streaming, mate!",
     "type": "craft-plugin",
-    "version": "2.1.0",
-    "require": {
+    "version": "2.2.0",
+    "require":
+    {
         "php": ">=8.1",
         "craftcms/cms": "^4.5.0",
-        "firebase/php-jwt": "^6.9",
+        "firebase/php-jwt": "^6.9||^7.0",
         "muxinc/mux-php": "^3.0"
     },
-    "require-dev": {
+    "require-dev":
+    {
         "craftcms/ecs": "dev-main",
         "craftcms/phpstan": "dev-main"
     },
-    "autoload": {
-        "psr-4": {
+    "autoload":
+    {
+        "psr-4":
+        {
             "vaersaagod\\muxmate\\": "src/"
         }
     },
     "license": "MIT",
-    "extra": {
+    "extra":
+    {
         "handle": "_muxmate",
         "name": "MuxMate",
         "developer": "Værsågod",
         "documentationUrl": "",
         "class": "vaersaagod\\muxmate\\MuxMate"
     },
-    "support": {
+    "support":
+    {
         "docs": "https://github.com/vaersaagod/muxmate/blob/master/README.md",
         "issues": "https://github.com/vaersaagod/muxmate/issues"
     },
-    "authors": [
+    "authors":
+    [
         {
             "name": "Værsågod",
             "homepage": "https://www.vaersaagod.no/"
         }
     ],
-    "scripts": {
+    "scripts":
+    {
         "check-cs": "ecs check --ansi",
         "fix-cs": "ecs check --ansi --fix",
         "phpstan": "phpstan --memory-limit=1G"
     },
-    "config": {
+    "config":
+    {
         "sort-packages": true,
-        "platform": {
+        "platform":
+        {
             "php": "8.1"
         },
-        "allow-plugins": {
+        "allow-plugins":
+        {
             "yiisoft/yii2-composer": true,
             "craftcms/plugin-installer": true
         }

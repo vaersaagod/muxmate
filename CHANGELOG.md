@@ -1,5 +1,9 @@
 # MuxMate Changelog
 
+## 2.2.0 - 2026-03-13
+### Changed
+- Allow `^7.0` for `firebase/php-jwt`
+
 ## 2.1.0 - 2024-04-06
 ### Changed
 - Added new icon
